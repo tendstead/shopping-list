@@ -3,7 +3,7 @@ services:
     cpus: 2
     mem_limit: 2g
     memswap_limit: 2g
-    image: golang:1.26.10
+    image: golang:1.27.3
     working_dir: /app
     volumes: [".:/app", "go-mod:/go/pkg/mod", "go-build:/root/.cache/go-build"]
   frontend:
@@ -17,7 +17,7 @@ services:
     cpus: 2
     mem_limit: 2g
     memswap_limit: 2g
-    image: golangci/golangci-lint:v2.11.3
+    image: golangci/golangci-lint:v2.15.0
     working_dir: /app
     volumes: [".:/app", "go-mod:/go/pkg/mod", "go-build:/root/.cache/go-build", "lint-cache:/root/.cache/golangci-lint"]
 volumes:

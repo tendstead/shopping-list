@@ -15,7 +15,7 @@ lint:
 vet:
 	$(TOOLS) run --rm go go vet ./...
 vuln:
-	$(TOOLS) run --rm go sh -c 'go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...'
+	$(TOOLS) run --rm go sh -c 'go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...'
 	$(TOOLS) run --rm frontend npm audit --audit-level=high
 test:
 	$(TOOLS) run --rm go go test -race -count=1 ./...
