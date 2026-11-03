@@ -1,0 +1,47 @@
+.env
+web/node_modules/
+web/.svelte-kit/
+web/build/
+coverage/
+test-results/
+playwright-report/
+.implementation/
+
+.playwright-mcp/
+web/test-results/
+web/playwright-report/
+
+# Local environment variants; keep credential-free examples publishable.
+.env.*
+!.env.example
+!.env.*.example
+
+# Credentials, private keys and local database exports.
+secrets/
+certs/
+backups/
+/database-password
+/database-password.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.dump
+*.backup
+*.sql.gz
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# Local logs, editor/assistant settings and operating-system metadata.
+*.log
+.idea/
+.vscode/
+.codex/
+.DS_Store
+Thumbs.db

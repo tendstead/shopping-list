@@ -1,0 +1,50 @@
+name: shopping-list
+services:
+  app:
+    cpus: 1
+    mem_limit: 128m
+    memswap_limit: 128m
+    build: .
+    image: shopping-list:local
+    ports: ["${LISTEN_ADDR:-0.0.0.0}:${PORT:-8080}:8080"]
+    environment:
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${DB_USERNAME:-shopping}
+      DB_PASSWORD: ${DB_PASSWORD:-shopping-dev-only}
+      DB_PASSWORD_FILE: ${DB_PASSWORD_FILE:-}
+      DB_NAME: ${DB_NAME:-shopping}
+      DB_SSL_MODE: ${DB_SSL_MODE:-disable}
+      DB_SEARCH_PATH: ${DB_SEARCH_PATH:-public}
+      GOMEMLIMIT: ${GOMEMLIMIT:-96MiB}
+      GOMAXPROCS: "1"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, /app/shopping-list, -healthcheck]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+  postgres:
+    cpus: 1
+    mem_limit: 512m
+    memswap_limit: 512m
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: shopping
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-shopping-dev-only}
+      POSTGRES_DB: shopping
+    volumes: ["postgres-data:/var/lib/postgresql"]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U shopping -d shopping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+volumes:
+  postgres-data:

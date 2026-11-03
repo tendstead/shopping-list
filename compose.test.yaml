@@ -1,0 +1,68 @@
+services:
+  postgres:
+    cpus: 1
+    mem_limit: 512m
+    memswap_limit: 512m
+    image: postgres:18-alpine
+    environment: {POSTGRES_USER: shopping, POSTGRES_PASSWORD: test-only, POSTGRES_DB: shopping}
+    tmpfs: [/var/lib/postgresql]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U shopping -d shopping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  service-tests:
+    cpus: 2
+    mem_limit: 2g
+    memswap_limit: 2g
+    image: golang:1.26.9
+    working_dir: /app
+    volumes: [".:/app:ro", "go-mod:/go/pkg/mod", "go-build:/root/.cache/go-build"]
+    environment: {DB_HOST: postgres, DB_PORT: "5432", DB_USERNAME: shopping, DB_PASSWORD: test-only, DB_NAME: shopping, DB_SSL_MODE: disable}
+    depends_on: {postgres: {condition: service_healthy}}
+    command: [go, test, -race, -count=1, ./internal/store, ./internal/httpapi]
+  app:
+    cpus: 1
+    mem_limit: 128m
+    memswap_limit: 128m
+    build: .
+    environment: {DB_HOST: postgres, DB_PORT: "5432", DB_USERNAME: shopping, DB_PASSWORD: test-only, DB_NAME: shopping, DB_SSL_MODE: disable, GOMEMLIMIT: 96MiB, GOMAXPROCS: "1"}
+    depends_on: {postgres: {condition: service_healthy}}
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: [CMD, /app/shopping-list, -healthcheck]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  tls:
+    cpus: 0.5
+    mem_limit: 128m
+    memswap_limit: 128m
+    image: caddy:2-alpine
+    volumes: ["./tests/Caddyfile:/etc/caddy/Caddyfile:ro", "tls-data:/data"]
+    tmpfs: [/config]
+    networks:
+      default:
+        aliases: [shopping.test]
+    depends_on: {app: {condition: service_healthy}}
+    healthcheck:
+      test: [CMD-SHELL, "wget --no-check-certificate -q -O /dev/null https://shopping.test/health/ready"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  e2e:
+    cpus: 2
+    mem_limit: 4g
+    memswap_limit: 4g
+    image: mcr.microsoft.com/playwright:v1.58.2-noble
+    working_dir: /app/web
+    volumes: [".:/app", "e2e-node:/app/web/node_modules", "tls-data:/certs:ro"]
+    environment: {BASE_URL: "https://shopping.test", CI: "true"}
+    depends_on: {tls: {condition: service_healthy}}
+    command: [sh, -c, "cp /certs/caddy/pki/authorities/local/root.crt /usr/local/share/ca-certificates/shopping-test.crt && update-ca-certificates && npm ci && npm run test:e2e"]
+volumes:
+  go-mod:
+  go-build:
+  e2e-node:
+  tls-data:

@@ -1,0 +1,14 @@
+# Draft: opt in with pre-commit install after initializing the repository.
+repos:
+  - repo: local
+    hooks:
+      - id: shopping-format
+        name: Docker formatting check
+        entry: make fmt-check
+        language: system
+        pass_filenames: false
+      - id: shopping-lint
+        name: Docker lint and type checks
+        entry: make lint vet
+        language: system
+        pass_filenames: false

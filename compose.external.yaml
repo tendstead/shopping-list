@@ -1,0 +1,34 @@
+# TrueNAS Custom App / existing PostgreSQL example. Set the listed environment
+# variables and change the password bind path to a file in your NAS dataset.
+name: shopping-list-external
+services:
+  app:
+    cpus: 1
+    mem_limit: 128m
+    memswap_limit: 128m
+    image: ${SHOPPING_IMAGE:?Set SHOPPING_IMAGE to your published namespace/image:version}
+    ports: ["${LISTEN_ADDR:-127.0.0.1}:${PORT:-8080}:8080"]
+    environment:
+      DB_HOST: ${DB_HOST:?Set the existing PostgreSQL hostname}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${DB_USERNAME:?Set the database user}
+      DB_PASSWORD_FILE: /run/secrets/database-password
+      DB_NAME: ${DB_NAME:?Set the database name}
+      DB_SSL_MODE: ${DB_SSL_MODE:-verify-full}
+      DB_SEARCH_PATH: ${DB_SEARCH_PATH:-public}
+      GOMEMLIMIT: ${GOMEMLIMIT:-96MiB}
+      GOMAXPROCS: "1"
+    volumes:
+      - ${DB_PASSWORD_HOST_FILE:?Set the NAS password file path}:/run/secrets/database-password:ro
+      # For a private DB CA, mount its certificate here and use verify-full:
+      # - /mnt/pool/apps/shopping/postgresql-root.crt:/home/nonroot/.postgresql/root.crt:ro
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, /app/shopping-list, -healthcheck]
+      interval: 15s
+      timeout: 3s
+      retries: 3
