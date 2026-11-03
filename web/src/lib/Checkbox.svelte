@@ -53,17 +53,17 @@
   .box {
     width: 24px;
     height: 24px;
-    border: 1.5px solid #9aaca0;
+    border: 1.5px solid var(--ts-muted, #625e6b);
     border-radius: 7px;
     display: grid;
     place-items: center;
     font-size: 17px;
-    color: white;
+    color: var(--ts-on-primary, #fff);
     flex-shrink: 0;
   }
   .active .box {
-    background: #245c45;
-    border-color: #245c45;
+    background: var(--ts-primary, #6750a4);
+    border-color: var(--ts-primary, #6750a4);
   }
   button:disabled {
     opacity: 0.5;

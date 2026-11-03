@@ -34,6 +34,19 @@ test('shared shell preserves tab navigation, history, language and mobile menu',
   await mobile.getByRole('link', { name: 'Edit', exact: true }).click();
   await expect(page).toHaveURL(/\/edit$/);
   await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Add item', exact: true }),
+  ).toHaveCSS('background-color', 'rgb(103, 80, 164)');
+  const counter = page.getByRole('checkbox', {
+    name: 'Show counter',
+    exact: true,
+  });
+  await counter.check();
+  await expect(counter.locator('.box')).toHaveCSS(
+    'background-color',
+    'rgb(103, 80, 164)',
+  );
+  await counter.uncheck();
   await page.reload();
   await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
   await mobile.getByRole('button', { name: 'Menu', exact: true }).click();
