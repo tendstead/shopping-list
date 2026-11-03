@@ -835,7 +835,7 @@
   .shopping-shell :global(.ts-brand-mark) {
     border: 0;
     font-size: 0;
-    background: url('/tendstead-mark.svg') center / 64px 64px no-repeat;
+    background: url('/shopping-list-mark.svg') center / 52px 52px no-repeat;
   }
   .shopping-shell :global(.ts-page-heading) {
     display: flex;

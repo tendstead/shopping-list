@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-labelledby="title description">
+  <title id="title">Shopping List</title>
+  <desc id="description">A shopping cart with a rounded handle, an open basket and two wheels.</desc>
+  <g fill="none" stroke="#6750A4" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 55h20l17 72h63l14-50H68"/>
+    <path d="m94 91 4 22m28-22-4 22"/>
+  </g>
+  <g fill="#6750A4">
+    <circle cx="91" cy="151" r="7"/>
+    <circle cx="137" cy="151" r="7"/>
+  </g>
+</svg>

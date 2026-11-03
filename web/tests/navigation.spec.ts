@@ -66,9 +66,9 @@ test('shared shell preserves tab navigation, history, language and mobile menu',
   await expect(page.locator('.ts-brand-mark')).toHaveCSS('font-size', '0px');
   await expect(page.locator('.ts-brand-mark')).toHaveCSS(
     'background-image',
-    /tendstead-mark\.svg/,
+    /shopping-list-mark\.svg/,
   );
-  expect((await page.request.get('/tendstead-mark.svg')).ok()).toBeTruthy();
+  expect((await page.request.get('/shopping-list-mark.svg')).ok()).toBeTruthy();
   await expect(
     desktop
       .getByRole('link', { name: 'Bearbeiten', exact: true })

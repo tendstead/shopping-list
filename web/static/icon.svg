@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
-  <title id="title">Tendstead</title>
-  <desc id="description">A white shelter roof above a growing sprout, on Tendstead purple.</desc>
-  <rect width="512" height="512" fill="#6750A4"/>
-  <g fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M142 210 256 120 370 210"/>
-    <path d="M256 300V384"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-labelledby="title description">
+  <title id="title">Shopping List</title>
+  <desc id="description">A shopping cart with a rounded handle, an open basket and two wheels.</desc>
+  <rect width="192" height="192" rx="44" fill="#6750A4"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 55h20l17 72h63l14-50H68"/>
+    <path d="m94 91 4 22m28-22-4 22"/>
   </g>
   <g fill="#FFFFFF">
-    <path d="M256 318C198 318 160 283 160 244C216 244 256 276 256 318Z"/>
-    <path d="M256 318C314 318 352 283 352 244C296 244 256 276 256 318Z"/>
+    <circle cx="91" cy="151" r="7"/>
+    <circle cx="137" cy="151" r="7"/>
   </g>
 </svg>
