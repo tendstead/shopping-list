@@ -1,10 +1,17 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import { resolve } from '$app/paths';
-  import Checkbox from '../lib/Checkbox.svelte';
-  import ItemRow from '../lib/ItemRow.svelte';
-  import { translations, type Language } from '../lib/i18n';
-  import { Sync, openPersistence } from '../lib/sync';
+  import { afterNavigate, goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import { AppShell, type Destination } from '@tendstead/ui';
+  import '@tendstead/ui/theme.css';
+  import HistoryIcon from '../../lib/icons/HistoryIcon.svelte';
+  import ListIcon from '../../lib/icons/ListIcon.svelte';
+  import EditIcon from '../../lib/icons/EditIcon.svelte';
+  import Checkbox from '../../lib/Checkbox.svelte';
+  import ItemRow from '../../lib/ItemRow.svelte';
+  import { translations, type Language } from '../../lib/i18n';
+  import { Sync, openPersistence } from '../../lib/sync';
   import {
     newID,
     normalize,
@@ -13,7 +20,7 @@
     type Operation,
     type Pending,
     type History,
-  } from '../lib/model';
+  } from '../../lib/model';
   let sync: Sync;
   let view: SharedState | null = null;
   let status = 'offline';
@@ -41,6 +48,46 @@
   let history: History[] = [];
   let scrolls: Record<string, number> = {};
   $: t = translations[lang];
+  $: destinations = [
+    {
+      id: 'history',
+      icon: HistoryIcon,
+      label: t.history,
+      href: resolve('/[[section]]', { section: 'history' }),
+      match: 'exact',
+    },
+    {
+      id: 'list',
+      icon: ListIcon,
+      label: t.list,
+      href: resolve('/[[section]]', { section: undefined }),
+      match: 'exact',
+    },
+    {
+      id: 'edit',
+      icon: EditIcon,
+      label: t.edit,
+      href: resolve('/[[section]]', { section: 'edit' }),
+      match: 'exact',
+    },
+  ] satisfies Destination[];
+  $: pathname = destinations.find(
+    (destination) => destination.id === tab,
+  )!.href;
+  function navigate(event: MouseEvent, destination: Destination) {
+    event.preventDefault();
+    const section =
+      destination.id === 'history' || destination.id === 'edit'
+        ? destination.id
+        : undefined;
+    if (sync) void goto(resolve('/[[section]]', { section }), { reset: false });
+  }
+  afterNavigate(({ from, to }) => {
+    if (!from || !ready || !sync) return;
+    const section = to?.params?.section;
+    const next = section === 'history' || section === 'edit' ? section : 'list';
+    if (next !== tab) void switchTab(next);
+  });
   $: displayStatus =
     status === 'synced' && (busy || actionsPending > 0) ? 'saving' : status;
   $: layout = view?.layouts.find((l) => l.id === layoutId) || view?.layouts[0];
@@ -130,6 +177,8 @@
     } catch {
       /* start with defaults */
     }
+    const section = page.params.section;
+    if (section === 'history' || section === 'edit') tab = section;
     document.documentElement.lang = lang;
     void (async () => {
       try {
@@ -354,436 +403,473 @@
 </script>
 
 <svelte:head
-  ><title>Together · {t.list}</title><meta
+  ><title>{t.brand} - Tendstead</title><meta
     name="description"
     content={t.subtitle}
   /></svelte:head
 >
-<div class="app">
-  <header>
-    <a class="brand" href={resolve('/')} aria-label="Together"
-      ><img src="/icon.svg" alt="" />Together<span>{t.subtitle}</span></a
-    ><label class="language"
-      ><span class="sr-only">{t.language}</span><select
-        aria-label={t.language}
-        value={lang}
-        on:change={(e) => {
-          lang = e.currentTarget.value as Language;
-          document.documentElement.lang = lang;
-          prefs();
-        }}><option value="en">EN</option><option value="de">DE</option></select
-      ></label
-    >
-  </header>
-  <main>
-    <div class="status-line">
-      <span data-testid="sync-status" class="status {displayStatus}"
-        ><i></i>{displayStatus === 'synced'
-          ? t.synced
-          : displayStatus === 'saving'
-            ? t.saving
-            : displayStatus === 'attention'
-              ? t.attention
-              : `${t.offline} · ${pending.length} ${t.pending}`}</span
-      >{#if status === 'offline' && ready}<button
-          class="text-button"
-          on:click={() => sync?.reconcile()}>{t.retry}</button
-        >{/if}
-    </div>
-    {#if notification}<div
-        class="notice"
-        data-testid="notification"
-        role="status"
+<div class="shopping-shell">
+  <AppShell
+    brand={t.brand}
+    appLabel="Tendstead"
+    pageTitle={t.brand}
+    {pathname}
+    {destinations}
+    mobilePrimaryIds={['history', 'list', 'edit']}
+    onNavigate={navigate}
+  >
+    {#snippet pageActions()}
+      <label class="language"
+        ><span class="sr-only">{t.language}</span><select
+          aria-label={t.language}
+          value={lang}
+          on:change={(e) => {
+            lang = e.currentTarget.value as Language;
+            document.documentElement.lang = lang;
+            prefs();
+          }}
+          ><option value="en">EN</option><option value="de">DE</option></select
+        ></label
       >
-        <span>{notification}</span><button
-          class="icon-button"
-          aria-label={t.done}
-          on:click={() => (notification = '')}>×</button
-        >
-      </div>{/if}
-    {#if error}<div class="error" role="alert">{error}</div>{/if}
-    {#if conflict}<section class="conflict" aria-label={t.conflict}>
-        <h2>{t.conflict}</h2>
-        <p>{conflict.label} · {fieldLabel}</p>
-        {#if conflict.problem?.code === 'late_trip'}<p>
-            {t.late}
-          </p>{:else if conflict.problem?.code === 'invalid_controls'}<p>
-            {t.updatedControls}
-          </p>{/if}
-        <div class="choices">
-          <div>
-            <small>{t.current}</small>
-            <p>{showValue(currentValue())}</p>
-          </div>
-          <div>
-            <small>{t.mine}</small>
-            <p>{showValue(conflict.op.value ?? conflict.op.name)}</p>
-          </div>
-        </div>
-        <div class="actions">
-          <button class="secondary" on:click={() => resolveConflict('server')}
-            >{t.keepCurrent}</button
-          >{#if duplicateConflict}<button
-              class="primary"
-              disabled={!connected}
-              on:click={async () => {
-                try {
-                  await sync.useDuplicate();
-                  await sync.reconcile();
-                } catch {
-                  error = t.storage;
-                }
-              }}>{t.use} {duplicateConflict.name}</button
-            >{:else if conflict.op.kind !== 'finish' && !removed}<button
-              class="primary"
-              disabled={!connected}
-              on:click={() => resolveConflict('mine')}>{t.keepMine}</button
-            >{:else if removed}<button
-              class="primary"
-              disabled={!connected}
-              on:click={async () => {
-                try {
-                  await sync.restoreRemoved();
-                  await sync.reconcile();
-                } catch {
-                  error = t.storage;
-                }
-              }}>{t.restore}</button
-            >{/if}
-        </div>
-      </section>{/if}
-    {#if !ready}<p class="empty">{t.loading}</p>{:else if !view}<div
-        class="empty"
-      >
-        <h1>{t.noSnapshot}</h1>
-      </div>{:else if tab === 'list'}
-      <section class="hero">
-        <p class="eyebrow">{t.list} · {needed} {t.neededSummary}</p>
-        <h1>{shopping ? t.shopping : t.prepare}</h1>
-        <p>{shopping ? t.shoppingHint : t.prepareHint}</p>
-        <div class="actions">
-          <button
-            aria-label={shopping ? t.back : t.go}
-            class={shopping ? 'secondary' : 'primary'}
-            on:click={switchMode}
-            >{shopping ? '← ' + t.back : t.go + ' →'}</button
-          >{#if shopping}<button
-              class="primary"
-              disabled={busy ||
-                (finishConfirm &&
-                  (status === 'attention' || status === 'offline'))}
-              on:click={finish}>{t.finish}</button
-            >{/if}
-        </div>
-      </section>
-      {#if finishConfirm}<div class="finish-info" role="status">
-          <p>{t.finishInfo}</p>
-          <button class="text-button" on:click={() => (finishConfirm = false)}
-            >{t.cancel}</button
-          >
-        </div>{/if}
-      <div class="list-toolbar">
-        <label class="layout"
-          ><span>{t.layout}</span><select
-            aria-label={t.layout}
-            value={layout?.id}
-            on:change={(e) => chooseLayout(e.currentTarget.value)}
-            >{#each view.layouts as l (l.id)}<option value={l.id}
-                >{l.name}</option
-              >{/each}</select
-          ></label
-        ><button
-          class="text-button"
-          aria-pressed={arrange}
-          on:click={() => (arrange = !arrange)}
-          >{arrange ? t.done : t.arrange}</button
-        >
+    {/snippet}
+    <div class="app">
+      <div class="status-line">
+        <span data-testid="sync-status" class="status {displayStatus}"
+          ><i></i>{displayStatus === 'synced'
+            ? t.synced
+            : displayStatus === 'saving'
+              ? t.saving
+              : displayStatus === 'attention'
+                ? t.attention
+                : `${t.offline} · ${pending.length} ${t.pending}`}</span
+        >{#if status === 'offline' && ready}<button
+            class="text-button"
+            on:click={() => sync?.reconcile()}>{t.retry}</button
+          >{/if}
       </div>
-      {#if visible.length}<ul class="items">
-          {#each visible as item (item.id)}<ItemRow
-              {item}
-              {shopping}
-              {lang}
-              {arrange}
-              canUp={visible[0].id !== item.id}
-              canDown={visible[visible.length - 1].id !== item.id}
-              change={(field, value) => change(item, field, value)}
-              move={(delta) => move(item, delta)}
-              drop={reorder}
-            />{/each}
-        </ul>{:else}<div class="empty">
-          <span class="empty-icon" aria-hidden="true"
-            >{shopping ? '✓' : '＋'}</span
+      {#if notification}<div
+          class="notice"
+          data-testid="notification"
+          role="status"
+        >
+          <span>{notification}</span><button
+            class="icon-button"
+            aria-label={t.done}
+            on:click={() => (notification = '')}>×</button
           >
-          <h2>{shopping ? t.nothingNeeded : t.empty}</h2>
-          <p>{shopping ? t.nothingHint : t.emptyHint}</p>
-          {#if !shopping}<button
-              class="secondary"
-              on:click={() => switchTab('edit')}>{t.edit}</button
-            >{/if}
         </div>{/if}
-      {#if shopping && cart.length}<details class="cart">
-          <summary>{t.inCart} · {cart.length}</summary>
-          <ul class="items">
-            {#each cart as item (item.id)}<ItemRow
+      {#if error}<div class="error" role="alert">{error}</div>{/if}
+      {#if conflict}<section class="conflict" aria-label={t.conflict}>
+          <h2>{t.conflict}</h2>
+          <p>{conflict.label} · {fieldLabel}</p>
+          {#if conflict.problem?.code === 'late_trip'}<p>
+              {t.late}
+            </p>{:else if conflict.problem?.code === 'invalid_controls'}<p>
+              {t.updatedControls}
+            </p>{/if}
+          <div class="choices">
+            <div>
+              <small>{t.current}</small>
+              <p>{showValue(currentValue())}</p>
+            </div>
+            <div>
+              <small>{t.mine}</small>
+              <p>{showValue(conflict.op.value ?? conflict.op.name)}</p>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="secondary" on:click={() => resolveConflict('server')}
+              >{t.keepCurrent}</button
+            >{#if duplicateConflict}<button
+                class="primary"
+                disabled={!connected}
+                on:click={async () => {
+                  try {
+                    await sync.useDuplicate();
+                    await sync.reconcile();
+                  } catch {
+                    error = t.storage;
+                  }
+                }}>{t.use} {duplicateConflict.name}</button
+              >{:else if conflict.op.kind !== 'finish' && !removed}<button
+                class="primary"
+                disabled={!connected}
+                on:click={() => resolveConflict('mine')}>{t.keepMine}</button
+              >{:else if removed}<button
+                class="primary"
+                disabled={!connected}
+                on:click={async () => {
+                  try {
+                    await sync.restoreRemoved();
+                    await sync.reconcile();
+                  } catch {
+                    error = t.storage;
+                  }
+                }}>{t.restore}</button
+              >{/if}
+          </div>
+        </section>{/if}
+      {#if !ready}<p class="empty">{t.loading}</p>{:else if !view}<div
+          class="empty"
+        >
+          <h2 class="page-heading">{t.noSnapshot}</h2>
+        </div>{:else if tab === 'list'}
+        <section class="hero">
+          <p class="eyebrow">{t.list} · {needed} {t.neededSummary}</p>
+          <h2 class="page-heading">{shopping ? t.shopping : t.prepare}</h2>
+          <p>{shopping ? t.shoppingHint : t.prepareHint}</p>
+          <div class="actions">
+            <button
+              aria-label={shopping ? t.back : t.go}
+              class={shopping ? 'secondary' : 'primary'}
+              on:click={switchMode}
+              >{shopping ? '← ' + t.back : t.go + ' →'}</button
+            >{#if shopping}<button
+                class="primary"
+                disabled={busy ||
+                  (finishConfirm &&
+                    (status === 'attention' || status === 'offline'))}
+                on:click={finish}>{t.finish}</button
+              >{/if}
+          </div>
+        </section>
+        {#if finishConfirm}<div class="finish-info" role="status">
+            <p>{t.finishInfo}</p>
+            <button class="text-button" on:click={() => (finishConfirm = false)}
+              >{t.cancel}</button
+            >
+          </div>{/if}
+        <div class="list-toolbar">
+          <label class="layout"
+            ><span>{t.layout}</span><select
+              aria-label={t.layout}
+              value={layout?.id}
+              on:change={(e) => chooseLayout(e.currentTarget.value)}
+              >{#each view.layouts as l (l.id)}<option value={l.id}
+                  >{l.name}</option
+                >{/each}</select
+            ></label
+          ><button
+            class="text-button"
+            aria-pressed={arrange}
+            on:click={() => (arrange = !arrange)}
+            >{arrange ? t.done : t.arrange}</button
+          >
+        </div>
+        {#if visible.length}<ul class="items">
+            {#each visible as item (item.id)}<ItemRow
                 {item}
                 {shopping}
                 {lang}
-                arrange={false}
+                {arrange}
+                canUp={visible[0].id !== item.id}
+                canDown={visible[visible.length - 1].id !== item.id}
                 change={(field, value) => change(item, field, value)}
-                move={() => {}}
+                move={(delta) => move(item, delta)}
                 drop={reorder}
               />{/each}
-          </ul>
-        </details>{/if}
-      <button
-        aria-label={addOpen ? t.cancel : t.addOne}
-        class="add-one secondary"
-        on:click={() => {
-          addOpen = !addOpen;
-          duplicate = undefined;
-        }}>{addOpen ? t.cancel : '+ ' + t.addOne}</button
-      >
-      {#if addOpen}<form
-          class="panel"
-          on:submit|preventDefault={() => addItem(false)}
+          </ul>{:else}<div class="empty">
+            <span class="empty-icon" aria-hidden="true"
+              >{shopping ? '✓' : '＋'}</span
+            >
+            <h2>{shopping ? t.nothingNeeded : t.empty}</h2>
+            <p>{shopping ? t.nothingHint : t.emptyHint}</p>
+            {#if !shopping}<button
+                class="secondary"
+                on:click={() =>
+                  goto(resolve('/[[section]]', { section: 'edit' }), {
+                    reset: false,
+                  })}>{t.edit}</button
+              >{/if}
+          </div>{/if}
+        {#if shopping && cart.length}<details class="cart">
+            <summary>{t.inCart} · {cart.length}</summary>
+            <ul class="items">
+              {#each cart as item (item.id)}<ItemRow
+                  {item}
+                  {shopping}
+                  {lang}
+                  arrange={false}
+                  change={(field, value) => change(item, field, value)}
+                  move={() => {}}
+                  drop={reorder}
+                />{/each}
+            </ul>
+          </details>{/if}
+        <button
+          aria-label={addOpen ? t.cancel : t.addOne}
+          class="add-one secondary"
+          on:click={() => {
+            addOpen = !addOpen;
+            duplicate = undefined;
+          }}>{addOpen ? t.cancel : '+ ' + t.addOne}</button
         >
+        {#if addOpen}<form
+            class="panel"
+            on:submit|preventDefault={() => addItem(false)}
+          >
+            <label
+              >{t.name}<input
+                aria-label={t.name}
+                bind:value={newName}
+                maxlength="240"
+                required
+                autocomplete="off"
+              /></label
+            ><Checkbox
+              checked={newCounter}
+              label={t.counter}
+              onChange={(v) => (newCounter = v)}
+            /><Checkbox
+              checked={newTags}
+              label={t.personTags}
+              onChange={(v) => (newTags = v)}
+            />{#if newTags}<label
+                >{t.tagLabels}<input
+                  aria-label={t.tagLabels}
+                  bind:value={newTagLabels}
+                  autocomplete="off"
+                /></label
+              ><small>{t.tagHint}</small>{/if}<button
+              class="primary"
+              disabled={busy}>{t.add}</button
+            >{#if duplicate}<div role="status">
+                <p>{t.duplicate}</p>
+                <button type="button" class="secondary" on:click={useExisting}
+                  >{t.use} {duplicate.name}</button
+                >
+              </div>{/if}
+          </form>{/if}
+      {:else if tab === 'edit'}
+        <section class="hero">
+          <p class="eyebrow">{t.edit}</p>
+          <h2 class="page-heading">{t.editTitle}</h2>
+          <p>{t.editHint}</p>
+        </section>
+        {#if !canEdit}<p class="finish-info">{t.connectRequired}</p>{/if}
+        <form class="panel" on:submit|preventDefault={() => addItem(true)}>
           <label
             >{t.name}<input
               aria-label={t.name}
               bind:value={newName}
+              disabled={!canEdit}
               maxlength="240"
               required
               autocomplete="off"
             /></label
           ><Checkbox
             checked={newCounter}
+            disabled={!canEdit}
             label={t.counter}
             onChange={(v) => (newCounter = v)}
           /><Checkbox
             checked={newTags}
+            disabled={!canEdit}
             label={t.personTags}
             onChange={(v) => (newTags = v)}
           />{#if newTags}<label
               >{t.tagLabels}<input
                 aria-label={t.tagLabels}
                 bind:value={newTagLabels}
+                disabled={!canEdit}
                 autocomplete="off"
               /></label
             ><small>{t.tagHint}</small>{/if}<button
             class="primary"
-            disabled={busy}>{t.add}</button
+            disabled={!canEdit}>{t.add}</button
           >{#if duplicate}<div role="status">
               <p>{t.duplicate}</p>
               <button type="button" class="secondary" on:click={useExisting}
                 >{t.use} {duplicate.name}</button
               >
             </div>{/if}
-        </form>{/if}
-    {:else if tab === 'edit'}
-      <section class="hero">
-        <p class="eyebrow">{t.edit}</p>
-        <h1>{t.editTitle}</h1>
-        <p>{t.editHint}</p>
-      </section>
-      {#if !canEdit}<p class="finish-info">{t.connectRequired}</p>{/if}
-      <form class="panel" on:submit|preventDefault={() => addItem(true)}>
-        <label
-          >{t.name}<input
-            aria-label={t.name}
-            bind:value={newName}
-            disabled={!canEdit}
-            maxlength="240"
-            required
-            autocomplete="off"
-          /></label
-        ><Checkbox
-          checked={newCounter}
-          disabled={!canEdit}
-          label={t.counter}
-          onChange={(v) => (newCounter = v)}
-        /><Checkbox
-          checked={newTags}
-          disabled={!canEdit}
-          label={t.personTags}
-          onChange={(v) => (newTags = v)}
-        />{#if newTags}<label
-            >{t.tagLabels}<input
-              aria-label={t.tagLabels}
-              bind:value={newTagLabels}
-              disabled={!canEdit}
-              autocomplete="off"
-            /></label
-          ><small>{t.tagHint}</small>{/if}<button
-          class="primary"
-          disabled={!canEdit}>{t.add}</button
-        >{#if duplicate}<div role="status">
-            <p>{t.duplicate}</p>
-            <button type="button" class="secondary" on:click={useExisting}
-              >{t.use} {duplicate.name}</button
-            >
-          </div>{/if}
-      </form>
-      <div class="edit-items">
-        {#each view.items as item (item.id)}<section class="panel edit-item">
-            <label
-              >{t.name}<input
-                aria-label={`${t.rename} ${item.name}`}
-                value={item.name}
-                disabled={!canEdit}
-                maxlength="240"
-                on:blur={(e) => edit(item, 'name', e.currentTarget.value)}
-                on:keydown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur();
-                }}
-              /></label
-            ><Checkbox
-              checked={item.counter}
-              disabled={!canEdit}
-              label={`${t.counter} ${t.for} ${item.name}`}
-              onChange={(v) => edit(item, 'counter', v)}
-            /><Checkbox
-              checked={item.showTags}
-              disabled={!canEdit}
-              label={`${t.personTags} ${t.for} ${item.name}`}
-              onChange={(v) => edit(item, 'showTags', v)}
-            />{#if item.showTags}<label
-                >{t.tagLabels}<input
-                  aria-label={`${t.tagLabels} ${t.for} ${item.name}`}
-                  value={item.tags.join(' ')}
+        </form>
+        <div class="edit-items">
+          {#each view.items as item (item.id)}<section class="panel edit-item">
+              <label
+                >{t.name}<input
+                  aria-label={`${t.rename} ${item.name}`}
+                  value={item.name}
                   disabled={!canEdit}
-                  on:blur={(e) =>
-                    edit(
-                      item,
-                      'tags',
-                      e.currentTarget.value
-                        .split(/[,\s]+/)
-                        .filter(Boolean)
-                        .sort(),
-                    )}
+                  maxlength="240"
+                  on:blur={(e) => edit(item, 'name', e.currentTarget.value)}
+                  on:keydown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                  }}
                 /></label
-              >{/if}
-            <div class="edit-foot">
-              {#if !item.reusable}<small>{t.oneTime}</small>{/if}<button
-                class="danger text-button"
+              ><Checkbox
+                checked={item.counter}
                 disabled={!canEdit}
-                aria-label={`${t.delete} ${item.name}`}
-                on:click={() => deleteItem(item)}>{t.delete}</button
-              >
-            </div>
-          </section>{/each}
-      </div>
-      <button
-        class="secondary wide"
-        aria-expanded={layoutsOpen}
-        on:click={() => (layoutsOpen = !layoutsOpen)}>{t.manageLayouts}</button
-      >{#if layoutsOpen}<section class="panel layouts">
-          <form
-            on:submit|preventDefault={async () => {
-              if (
-                await write(
-                  { kind: 'layout_add', layoutId: newID(), name: newLayout },
-                  true,
-                )
-              )
-                newLayout = '';
-            }}
-          >
-            <label
-              >{t.newLayout}<input
-                aria-label={t.layoutName}
-                bind:value={newLayout}
+                label={`${t.counter} ${t.for} ${item.name}`}
+                onChange={(v) => edit(item, 'counter', v)}
+              /><Checkbox
+                checked={item.showTags}
                 disabled={!canEdit}
-                required
-                maxlength="240"
-              /></label
-            ><button class="primary" disabled={!canEdit}
-              >{t.createLayout}</button
-            >
-          </form>
-          {#each view.layouts as l (l.id)}<div class="layout-edit">
-              <input
-                aria-label={`${t.renameLayout} ${l.name}`}
-                value={l.name}
-                disabled={!canEdit}
-                on:blur={(e) => {
-                  if (e.currentTarget.value !== l.name)
-                    void write(
-                      {
-                        kind: 'layout_rename',
-                        layoutId: l.id,
-                        name: e.currentTarget.value,
-                        base: l.name,
-                      },
-                      true,
-                    );
-                }}
-              /><button
-                class="text-button danger"
-                aria-label={`${t.deleteLayout} ${l.name}`}
-                disabled={!canEdit || view.layouts.length === 1}
-                on:click={() =>
-                  write(
-                    { kind: 'layout_delete', layoutId: l.id, base: l },
-                    true,
-                  )}>{t.delete}</button
-              >
-            </div>{/each}
-        </section>{/if}
-    {:else}
-      <section class="hero">
-        <p class="eyebrow">{t.history}</p>
-        <h1>{t.historyTitle}</h1>
-        <p>{t.historyHint}</p>
-      </section>
-      {#if history.length === 0}<div class="empty">
-          <span class="empty-icon" aria-hidden="true">↗</span>
-          <h2>{t.historyEmpty}</h2>
-          <p>{t.historyEmptyHint}</p>
-        </div>{/if}
-      {#each history as trip (trip.id)}<article class="panel history">
-          <h2>
-            {new Date(trip.completedAt).toLocaleString(
-              lang === 'de' ? 'de-DE' : 'en-GB',
-              { dateStyle: 'medium', timeStyle: 'short' },
-            )}
-          </h2>
-          <ul>
-            {#each trip.items as item (item.name)}<li>
-                <span
-                  >{#if item.counter}<b>{item.count} ×</b>
-                  {/if}<span>{item.name}</span
-                  >{#if item.selectedTags.length}<small
-                      >{item.selectedTags.join(' · ')}</small
-                    >{/if}</span
-                ><span class:carried={item.carriedOver} class="history-status"
-                  >{item.purchased
-                    ? '✓ ' + t.purchased
-                    : '↗ ' + t.carried}</span
+                label={`${t.personTags} ${t.for} ${item.name}`}
+                onChange={(v) => edit(item, 'showTags', v)}
+              />{#if item.showTags}<label
+                  >{t.tagLabels}<input
+                    aria-label={`${t.tagLabels} ${t.for} ${item.name}`}
+                    value={item.tags.join(' ')}
+                    disabled={!canEdit}
+                    on:blur={(e) =>
+                      edit(
+                        item,
+                        'tags',
+                        e.currentTarget.value
+                          .split(/[,\s]+/)
+                          .filter(Boolean)
+                          .sort(),
+                      )}
+                  /></label
+                >{/if}
+              <div class="edit-foot">
+                {#if !item.reusable}<small>{t.oneTime}</small>{/if}<button
+                  class="danger text-button"
+                  disabled={!canEdit}
+                  aria-label={`${t.delete} ${item.name}`}
+                  on:click={() => deleteItem(item)}>{t.delete}</button
                 >
-              </li>{/each}
-          </ul>
-        </article>{/each}
-    {/if}
-  </main>
-  <nav aria-label={t.list}>
-    <button
-      class:active={tab === 'history'}
-      on:click={() => sync && switchTab('history')}
-      ><span aria-hidden="true">◷</span>{t.history}</button
-    ><button
-      class:active={tab === 'list'}
-      on:click={() => sync && switchTab('list')}
-      ><span aria-hidden="true">☷</span>{t.list}</button
-    ><button
-      class:active={tab === 'edit'}
-      on:click={() => sync && switchTab('edit')}
-      ><span aria-hidden="true">✎</span>{t.edit}</button
-    >
-  </nav>
+              </div>
+            </section>{/each}
+        </div>
+        <button
+          class="secondary wide"
+          aria-expanded={layoutsOpen}
+          on:click={() => (layoutsOpen = !layoutsOpen)}
+          >{t.manageLayouts}</button
+        >{#if layoutsOpen}<section class="panel layouts">
+            <form
+              on:submit|preventDefault={async () => {
+                if (
+                  await write(
+                    { kind: 'layout_add', layoutId: newID(), name: newLayout },
+                    true,
+                  )
+                )
+                  newLayout = '';
+              }}
+            >
+              <label
+                >{t.newLayout}<input
+                  aria-label={t.layoutName}
+                  bind:value={newLayout}
+                  disabled={!canEdit}
+                  required
+                  maxlength="240"
+                /></label
+              ><button class="primary" disabled={!canEdit}
+                >{t.createLayout}</button
+              >
+            </form>
+            {#each view.layouts as l (l.id)}<div class="layout-edit">
+                <input
+                  aria-label={`${t.renameLayout} ${l.name}`}
+                  value={l.name}
+                  disabled={!canEdit}
+                  on:blur={(e) => {
+                    if (e.currentTarget.value !== l.name)
+                      void write(
+                        {
+                          kind: 'layout_rename',
+                          layoutId: l.id,
+                          name: e.currentTarget.value,
+                          base: l.name,
+                        },
+                        true,
+                      );
+                  }}
+                /><button
+                  class="text-button danger"
+                  aria-label={`${t.deleteLayout} ${l.name}`}
+                  disabled={!canEdit || view.layouts.length === 1}
+                  on:click={() =>
+                    write(
+                      { kind: 'layout_delete', layoutId: l.id, base: l },
+                      true,
+                    )}>{t.delete}</button
+                >
+              </div>{/each}
+          </section>{/if}
+      {:else}
+        <section class="hero">
+          <p class="eyebrow">{t.history}</p>
+          <h2 class="page-heading">{t.historyTitle}</h2>
+          <p>{t.historyHint}</p>
+        </section>
+        {#if history.length === 0}<div class="empty">
+            <span class="empty-icon" aria-hidden="true">↗</span>
+            <h2>{t.historyEmpty}</h2>
+            <p>{t.historyEmptyHint}</p>
+          </div>{/if}
+        {#each history as trip (trip.id)}<article class="panel history">
+            <h2>
+              {new Date(trip.completedAt).toLocaleString(
+                lang === 'de' ? 'de-DE' : 'en-GB',
+                { dateStyle: 'medium', timeStyle: 'short' },
+              )}
+            </h2>
+            <ul>
+              {#each trip.items as item (item.name)}<li>
+                  <span
+                    >{#if item.counter}<b>{item.count} ×</b>
+                    {/if}<span>{item.name}</span
+                    >{#if item.selectedTags.length}<small
+                        >{item.selectedTags.join(' · ')}</small
+                      >{/if}</span
+                  ><span class:carried={item.carriedOver} class="history-status"
+                    >{item.purchased
+                      ? '✓ ' + t.purchased
+                      : '↗ ' + t.carried}</span
+                  >
+                </li>{/each}
+            </ul>
+          </article>{/each}
+      {/if}
+    </div>
+  </AppShell>
 </div>
 
 <style>
+  /* UI 0.1.0 has a fixed decorative letter mark and no brand-image prop. */
+  .shopping-shell :global(.ts-brand-mark) {
+    border: 0;
+    font-size: 0;
+    background: url('/tendstead-mark.svg') center / 64px 64px no-repeat;
+  }
+  .shopping-shell :global(.ts-page-heading) {
+    display: flex;
+    flex-direction: column;
+  }
+  .shopping-shell :global(.ts-page-heading .ts-eyebrow) {
+    order: 1;
+    margin: 4px 0 0;
+  }
+
+  .shopping-shell :global(.ts-nav-link > svg) {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    .shopping-shell :global(.ts-mobile-bar .ts-nav-link > svg) {
+      display: block;
+    }
+    .shopping-shell :global(.ts-mobile-bar .ts-nav-link),
+    .shopping-shell :global(.ts-mobile-bar .ts-menu-trigger) {
+      justify-content: center;
+    }
+    .shopping-shell :global(.ts-mobile-bar .ts-nav-label),
+    .shopping-shell :global(.ts-mobile-bar .ts-menu-trigger > span) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
   :global(*) {
     box-sizing: border-box;
   }
@@ -843,35 +929,7 @@
   .app {
     max-width: 780px;
     margin: auto;
-    padding: 0 20px 120px;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 28px 0 18px;
-    gap: 12px;
-  }
-  .brand {
-    display: grid;
-    grid-template-columns: 40px 1fr;
-    column-gap: 12px;
-    color: #245c45;
-    text-decoration: none;
-    font-size: 24px;
-    font-weight: 750;
-    line-height: 1.25;
-  }
-  .brand img {
-    width: 40px;
-    height: 40px;
-    grid-row: span 2;
-  }
-  .brand span {
-    font-size: 11px;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    color: #738072;
+    color: #233d2d;
   }
   .language select {
     border: 1px solid #d8ded1;
@@ -927,7 +985,7 @@
     font-weight: 650;
     margin: 0 0 12px;
   }
-  h1 {
+  .page-heading {
     font-family: Georgia, 'Times New Roman', serif;
     font-weight: 400;
     font-size: clamp(30px, 7vw, 42px);
@@ -1047,7 +1105,7 @@
     padding-bottom: 18px;
     color: #93aa81;
   }
-  .empty h1 {
+  .empty .page-heading {
     font-size: 26px;
   }
   .add-one {
@@ -1221,52 +1279,7 @@
   .history-status.carried {
     color: #a17932;
   }
-  nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 10;
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    background: rgba(250, 248, 242, 0.97);
-    border-top: 1px solid #e1e5d8;
-    padding: 8px 16px max(12px, env(safe-area-inset-bottom));
-    backdrop-filter: blur(14px);
-  }
-  nav button {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    min-height: 58px;
-    flex: 1;
-    max-width: 180px;
-    border: 0;
-    border-radius: 14px;
-    background: transparent;
-    color: #85917c;
-    font-size: 12px;
-    font-weight: 600;
-  }
-  nav button span {
-    font-size: 25px;
-    line-height: 1.2;
-  }
-  nav .active {
-    background: #e8eedf;
-    color: #245c45;
-  }
   @media (min-width: 650px) {
-    .app {
-      padding-left: 40px;
-      padding-right: 40px;
-    }
-    header {
-      padding-top: 38px;
-    }
     .hero {
       padding-top: 34px;
     }

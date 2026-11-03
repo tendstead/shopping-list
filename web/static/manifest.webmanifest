@@ -1,6 +1,6 @@
 {
-  "name": "Together · Shopping list",
-  "short_name": "Together",
+  "name": "Shopping List - Tendstead",
+  "short_name": "Shopping List",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#faf8f2",

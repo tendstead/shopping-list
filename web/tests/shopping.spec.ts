@@ -5,7 +5,7 @@ async function synced(page: Page) {
 async function add(page: Page, name: string, counter = false, tags = false) {
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Edit', exact: true })
+    .getByRole('link', { name: 'Edit', exact: true })
     .click();
   await page.getByLabel('Name', { exact: true }).fill(name);
   if (counter)
@@ -20,9 +20,7 @@ async function add(page: Page, name: string, counter = false, tags = false) {
   }
   await page.getByRole('button', { name: 'Add item', exact: true }).click();
   await synced(page);
-  await page
-    .getByRole('button', { name: 'Shopping list', exact: true })
-    .click();
+  await page.getByRole('link', { name: 'Shopping list', exact: true }).click();
 }
 function name(label: string) {
   return `${label} ${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
@@ -80,13 +78,13 @@ test('mobile checklist, counters, tags, duplicate selection, cart and immutable 
   ).toHaveText('0');
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'History', exact: true })
+    .getByRole('link', { name: 'History', exact: true })
     .click();
   await expect(page.getByText(milk, { exact: true }).first()).toBeVisible();
   await expect(page.getByText('2 ×', { exact: true }).first()).toBeVisible();
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Edit', exact: true })
+    .getByRole('link', { name: 'Edit', exact: true })
     .click();
   await page
     .getByLabel(`Rename ${milk}`, { exact: true })
@@ -95,7 +93,7 @@ test('mobile checklist, counters, tags, duplicate selection, cart and immutable 
   await synced(page);
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'History', exact: true })
+    .getByRole('link', { name: 'History', exact: true })
     .click();
   await expect(page.getByText(milk, { exact: true }).first()).toBeVisible();
   expect(
@@ -198,7 +196,9 @@ test('keyboard controls and German translation', async ({ page }) => {
   await expect(
     page.getByRole('button', { name: 'Einkaufen gehen', exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('navigation')).toContainText('Verlauf');
+  await expect(
+    page.getByRole('navigation', { name: 'Mobile navigation' }),
+  ).toContainText('Verlauf');
   await expect(page.getByTestId('sync-status')).toHaveText('Synchronisiert');
 });
 test('one-time carryover, deletion of needed reusable item and offline layout order', async ({
@@ -214,15 +214,13 @@ test('one-time carryover, deletion of needed reusable item and offline layout or
   await synced(page);
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Edit', exact: true })
+    .getByRole('link', { name: 'Edit', exact: true })
     .click();
   await page
     .getByRole('button', { name: `Delete ${item}`, exact: true })
     .click();
   await synced(page);
-  await page
-    .getByRole('button', { name: 'Shopping list', exact: true })
-    .click();
+  await page.getByRole('link', { name: 'Shopping list', exact: true }).click();
   await expect(page.getByTestId(`item-${item}`)).toContainText('One-time');
   await page.getByRole('button', { name: 'Arrange', exact: true }).click();
   await page.context().setOffline(true);

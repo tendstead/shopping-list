@@ -1,1 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="44" fill="#245c45"/><path d="M52 65h15l17 66h58l16-48H74M94 65V43m28 22V43" fill="none" stroke="#fff9ef" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="94" cy="152" r="8" fill="#fff9ef"/><circle cx="138" cy="152" r="8" fill="#fff9ef"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Tendstead</title>
+  <desc id="description">A white shelter roof above a growing sprout, on Tendstead purple.</desc>
+  <rect width="512" height="512" fill="#6750A4"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M142 210 256 120 370 210"/>
+    <path d="M256 300V384"/>
+  </g>
+  <g fill="#FFFFFF">
+    <path d="M256 318C198 318 160 283 160 244C216 244 256 276 256 318Z"/>
+    <path d="M256 318C314 318 352 283 352 244C296 244 256 276 256 318Z"/>
+  </g>
+</svg>
