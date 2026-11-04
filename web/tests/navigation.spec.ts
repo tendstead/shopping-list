@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('shared shell preserves tab navigation, history, language and mobile menu', async ({
+test('shared shell preserves tab navigation, history, language and three mobile tabs', async ({
   page,
 }) => {
   await page.goto('/');
@@ -25,9 +25,10 @@ test('shared shell preserves tab navigation, history, language and mobile menu',
       'inset(50%)',
     );
   }
+  await expect(mobile.getByRole('link')).toHaveCount(3);
   await expect(
-    mobile.getByRole('button', { name: 'Menu', exact: true }).locator('span'),
-  ).toHaveCSS('clip-path', 'inset(50%)');
+    mobile.getByRole('button', { name: 'Menu', exact: true }),
+  ).toHaveCount(0);
   await expect(
     mobile.getByRole('link', { name: 'Shopping list', exact: true }),
   ).toHaveAttribute('aria-current', 'page');
@@ -49,16 +50,8 @@ test('shared shell preserves tab navigation, history, language and mobile menu',
   await counter.uncheck();
   await page.reload();
   await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
-  await mobile.getByRole('button', { name: 'Menu', exact: true }).click();
-  const drawer = page.getByRole('dialog');
-  await expect(drawer).toBeVisible();
-  await expect(
-    drawer
-      .getByRole('link', { name: 'History', exact: true })
-      .locator('.ts-nav-label'),
-  ).toHaveCSS('clip-path', 'none');
-  await drawer.getByRole('link', { name: 'History', exact: true }).click();
-  await expect(drawer).not.toBeVisible();
+  await mobile.getByRole('link', { name: 'History', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page).toHaveURL(/\/history$/);
   await page.goBack();
   await expect(page.getByLabel('Name', { exact: true })).toBeVisible();

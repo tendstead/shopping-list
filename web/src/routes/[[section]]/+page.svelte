@@ -849,16 +849,18 @@
   .shopping-shell :global(.ts-nav-link > svg) {
     display: none;
   }
+  /* All three destinations are already in the mobile bar; no overflow menu. */
+  .shopping-shell :global(.ts-menu-trigger) {
+    display: none;
+  }
   @media (max-width: 767px) {
     .shopping-shell :global(.ts-mobile-bar .ts-nav-link > svg) {
       display: block;
     }
-    .shopping-shell :global(.ts-mobile-bar .ts-nav-link),
-    .shopping-shell :global(.ts-mobile-bar .ts-menu-trigger) {
+    .shopping-shell :global(.ts-mobile-bar .ts-nav-link) {
       justify-content: center;
     }
-    .shopping-shell :global(.ts-mobile-bar .ts-nav-label),
-    .shopping-shell :global(.ts-mobile-bar .ts-menu-trigger > span) {
+    .shopping-shell :global(.ts-mobile-bar .ts-nav-label) {
       position: absolute;
       width: 1px;
       height: 1px;
