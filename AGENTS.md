@@ -34,7 +34,7 @@ Name Go tests `*_test.go` with `Test...` functions, Vitest tests `*.test.ts`, an
 
 ## Commit & Pull Request Guidelines
 
-Git history is unavailable in this checkout; use concise, imperative commit subjects. PRs should explain changes, link issues, report checks, and include screenshots for UI changes. Use exactly one of `patch`, `minor`, or `major` when requesting an automatic release; unlabeled PRs do not release.
+Git history is unavailable in this checkout; use concise, imperative commit subjects. PRs should explain changes, link issues, report checks, and include screenshots for UI changes. Releases are manually started from the default branch using Actions → Release with a `patch`, `minor`, or `major` increment; PR labels do not publish releases.
 
 ## Security & Configuration
 
