@@ -50,13 +50,6 @@
   $: t = translations[lang];
   $: destinations = [
     {
-      id: 'history',
-      icon: HistoryIcon,
-      label: t.history,
-      href: resolve('/[[section]]', { section: 'history' }),
-      match: 'exact',
-    },
-    {
       id: 'list',
       icon: ListIcon,
       label: t.list,
@@ -68,6 +61,13 @@
       icon: EditIcon,
       label: t.edit,
       href: resolve('/[[section]]', { section: 'edit' }),
+      match: 'exact',
+    },
+    {
+      id: 'history',
+      icon: HistoryIcon,
+      label: t.history,
+      href: resolve('/[[section]]', { section: 'history' }),
       match: 'exact',
     },
   ] satisfies Destination[];

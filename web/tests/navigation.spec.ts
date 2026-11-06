@@ -25,7 +25,11 @@ test('shared shell preserves tab navigation, history, language and three mobile 
       'inset(50%)',
     );
   }
-  await expect(mobile.getByRole('link')).toHaveCount(3);
+  await expect(mobile.getByRole('link')).toHaveText([
+    'History',
+    'Shopping list',
+    'Edit',
+  ]);
   await expect(
     mobile.getByRole('button', { name: 'Menu', exact: true }),
   ).toHaveCount(0);
@@ -67,6 +71,11 @@ test('shared shell preserves tab navigation, history, language and three mobile 
   await expect(mobile).not.toBeVisible();
   const desktop = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(desktop).toBeVisible();
+  await expect(desktop.getByRole('link')).toHaveText([
+    'Einkaufsliste',
+    'Bearbeiten',
+    'Verlauf',
+  ]);
   await expect(page.locator('.ts-brand strong')).toHaveText('Shopping List');
   await expect(page.locator('.ts-brand .ts-app-label')).toHaveText('Tendstead');
   await expect(page.locator('.ts-brand-mark')).toHaveCSS('font-size', '0px');
