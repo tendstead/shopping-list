@@ -1,0 +1,106 @@
+import { test, expect } from '@playwright/test';
+
+test('shared shell preserves tab navigation, history, language and three mobile tabs', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.getByTestId('sync-status')).toHaveText('Synced');
+  await expect(page).toHaveTitle('Shopping List - Tendstead');
+  await expect(
+    page.getByRole('heading', { name: 'Shopping List', exact: true, level: 1 }),
+  ).toBeVisible();
+  await expect(page.locator('.ts-page-heading .ts-eyebrow')).toHaveText(
+    'Tendstead',
+  );
+  await expect(page.locator('.ts-page-heading .ts-eyebrow')).toHaveCSS(
+    'order',
+    '1',
+  );
+  const mobile = page.getByRole('navigation', { name: 'Mobile navigation' });
+  for (const label of ['History', 'Shopping list', 'Edit']) {
+    const link = mobile.getByRole('link', { name: label, exact: true });
+    await expect(link.locator('svg')).toBeVisible();
+    await expect(link.locator('.ts-nav-label')).toHaveCSS(
+      'clip-path',
+      'inset(50%)',
+    );
+  }
+  await expect(mobile.getByRole('link')).toHaveText([
+    'History',
+    'Shopping list',
+    'Edit',
+  ]);
+  await expect(
+    mobile.getByRole('button', { name: 'Menu', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    mobile.getByRole('link', { name: 'Shopping list', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+  await mobile.getByRole('link', { name: 'Edit', exact: true }).click();
+  await expect(page).toHaveURL(/\/edit$/);
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Add item', exact: true }),
+  ).toHaveCSS('background-color', 'rgb(103, 80, 164)');
+  const counter = page.getByRole('checkbox', {
+    name: 'Show counter',
+    exact: true,
+  });
+  await counter.check();
+  await expect(counter.locator('.box')).toHaveCSS(
+    'background-color',
+    'rgb(103, 80, 164)',
+  );
+  await counter.uncheck();
+  await page.reload();
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await mobile.getByRole('link', { name: 'History', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/history$/);
+  await page.goBack();
+  await expect(page.getByLabel('Name', { exact: true })).toBeVisible();
+  await page.goForward();
+  await expect(
+    mobile.getByRole('link', { name: 'History', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+  await page.getByLabel('Language', { exact: true }).selectOption('de');
+  await expect(
+    mobile.getByRole('link', { name: 'Verlauf', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(mobile).not.toBeVisible();
+  const desktop = page.getByRole('navigation', { name: 'Main navigation' });
+  await expect(desktop).toBeVisible();
+  await expect(desktop.getByRole('link')).toHaveText([
+    'Einkaufsliste',
+    'Bearbeiten',
+    'Verlauf',
+  ]);
+  await expect(page.locator('.ts-brand strong')).toHaveText('Shopping List');
+  await expect(page.locator('.ts-brand .ts-app-label')).toHaveText('Tendstead');
+  await expect(page.locator('.ts-brand-mark')).toHaveCSS('font-size', '0px');
+  await expect(page.locator('.ts-brand-mark')).toHaveCSS(
+    'background-image',
+    /shopping-list-mark\.svg/,
+  );
+  expect((await page.request.get('/shopping-list-mark.svg')).ok()).toBeTruthy();
+  await expect(
+    desktop
+      .getByRole('link', { name: 'Bearbeiten', exact: true })
+      .locator('.ts-nav-label'),
+  ).toHaveCSS('clip-path', 'none');
+  await expect(
+    desktop
+      .getByRole('link', { name: 'Bearbeiten', exact: true })
+      .locator('svg'),
+  ).not.toBeVisible();
+  await desktop.getByRole('link', { name: 'Bearbeiten', exact: true }).click();
+  await expect(page).toHaveURL(/\/edit$/);
+  await page.screenshot({
+    path: 'test-results/navigation-desktop.png',
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: 'test-results/navigation-mobile.png',
+  });
+});

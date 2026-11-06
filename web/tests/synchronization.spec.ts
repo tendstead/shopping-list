@@ -320,7 +320,7 @@ test('named layout create, rename, selection and deletion', async ({
   await synced(page);
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Edit', exact: true })
+    .getByRole('link', { name: 'Edit', exact: true })
     .click();
   await page
     .getByRole('button', { name: 'Manage layouts', exact: true })
@@ -337,14 +337,14 @@ test('named layout create, rename, selection and deletion', async ({
   await synced(page);
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Shopping list', exact: true })
+    .getByRole('link', { name: 'Shopping list', exact: true })
     .click();
   await page
     .getByLabel('Layout', { exact: true })
     .selectOption({ label: name + ' renamed' });
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Edit', exact: true })
+    .getByRole('link', { name: 'Edit', exact: true })
     .click();
   await page
     .getByRole('button', { name: `Delete layout ${name} renamed`, exact: true })
@@ -352,7 +352,7 @@ test('named layout create, rename, selection and deletion', async ({
   await synced(page);
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Shopping list', exact: true })
+    .getByRole('link', { name: 'Shopping list', exact: true })
     .click();
   expect((await state(page)).layouts.some((l) => l.name.startsWith(name))).toBe(
     false,
@@ -384,11 +384,11 @@ test('remote updates and navigation preserve checklist scroll position', async (
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(300);
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'History', exact: true })
+    .getByRole('link', { name: 'History', exact: true })
     .click();
   await page
     .getByRole('navigation')
-    .getByRole('button', { name: 'Shopping list', exact: true })
+    .getByRole('link', { name: 'Shopping list', exact: true })
     .click();
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(300);
 });

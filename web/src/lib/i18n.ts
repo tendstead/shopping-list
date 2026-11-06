@@ -1,5 +1,5 @@
 const en = {
-  brand: 'Together',
+  brand: 'Shopping List',
   subtitle: 'One household. One list.',
   prepare: 'Your next trip',
   shopping: 'Let’s go shopping',
@@ -99,7 +99,7 @@ const en = {
     'This item’s controls changed. Keep the shared value or review the item in Edit.',
 };
 const de: typeof en = {
-  brand: 'Together',
+  brand: 'Shopping List',
   subtitle: 'Ein Haushalt. Eine Liste.',
   prepare: 'Dein nächster Einkauf',
   shopping: 'Auf zum Einkaufen',

@@ -1,1 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="44" fill="#245c45"/><path d="M52 65h15l17 66h58l16-48H74M94 65V43m28 22V43" fill="none" stroke="#fff9ef" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="94" cy="152" r="8" fill="#fff9ef"/><circle cx="138" cy="152" r="8" fill="#fff9ef"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192" role="img" aria-labelledby="title description">
+  <title id="title">Shopping List</title>
+  <desc id="description">A shopping cart with a rounded handle, an open basket and two wheels.</desc>
+  <rect width="192" height="192" rx="44" fill="#6750A4"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 55h20l17 72h63l14-50H68"/>
+    <path d="m94 91 4 22m28-22-4 22"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="91" cy="151" r="7"/>
+    <circle cx="137" cy="151" r="7"/>
+  </g>
+</svg>

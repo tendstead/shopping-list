@@ -127,7 +127,7 @@
   li {
     list-style: none;
     padding: 14px 12px;
-    border-bottom: 1px solid #e9e9df;
+    border-bottom: 1px solid var(--ts-border, #dedbe4);
     scroll-margin: 100px;
   }
   .main-row {
@@ -147,7 +147,7 @@
     margin-top: 3px;
     font-weight: 400;
     font-size: 11px;
-    color: #69786b;
+    color: var(--ts-muted, #625e6b);
     text-transform: uppercase;
     letter-spacing: 0.07em;
   }
@@ -161,10 +161,10 @@
     height: 46px;
     width: 42px;
     font-size: 24px;
-    border: 1px solid #d8e3d9;
+    border: 1px solid var(--ts-border, #dedbe4);
     border-radius: 12px;
-    background: #eef3ed;
-    color: #245c45;
+    background: var(--ts-surface-subtle, #f9f9fb);
+    color: var(--ts-primary, #6750a4);
   }
   .counter output {
     min-width: 28px;
@@ -185,27 +185,27 @@
     vertical-align: middle;
   }
   .tags button {
-    border: 1px solid #d6ddcd;
+    border: 1px solid var(--ts-border, #dedbe4);
     min-width: 36px;
     min-height: 44px;
     border-radius: 10px;
     font-size: 12px;
     font-weight: 700;
-    background: #fffdf7;
-    color: #677763;
+    background: var(--ts-surface, #fff);
+    color: var(--ts-muted, #625e6b);
     padding: 4px 7px;
   }
   .tags .selected {
-    background: #245c45;
-    color: white;
-    border-color: #245c45;
+    background: var(--ts-primary, #6750a4);
+    color: var(--ts-on-primary, #fff);
+    border-color: var(--ts-primary, #6750a4);
   }
   .purchased .name > span {
     text-decoration: line-through;
-    color: #788479;
+    color: var(--ts-muted, #625e6b);
   }
   .purchased {
-    background: #f5f7f0;
+    background: var(--ts-surface-subtle, #f9f9fb);
   }
   .order {
     display: flex;
@@ -214,18 +214,18 @@
     padding-top: 6px;
   }
   .order button {
-    background: #f1f2e9;
+    background: var(--ts-surface-subtle, #f9f9fb);
     border: 0;
     border-radius: 8px;
     min-height: 44px;
     min-width: 44px;
-    color: #536b59;
+    color: var(--ts-muted, #625e6b);
     font-size: 18px;
   }
   .handle {
     touch-action: none;
   }
   .dragging {
-    background: #e3eddf;
+    background: var(--ts-selection, #e9e2f5);
   }
 </style>
