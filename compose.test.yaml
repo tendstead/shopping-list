@@ -15,7 +15,7 @@ services:
     cpus: 2
     mem_limit: 2g
     memswap_limit: 2g
-    image: golang:1.27.3
+    image: golang:1.27.4
     working_dir: /app
     volumes: [".:/app:ro", "go-mod:/go/pkg/mod", "go-build:/root/.cache/go-build"]
     environment: {DB_HOST: postgres, DB_PORT: "5432", DB_USERNAME: shopping, DB_PASSWORD: test-only, DB_NAME: shopping, DB_SSL_MODE: disable}
