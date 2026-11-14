@@ -9,11 +9,15 @@
   import ListIcon from '../../lib/icons/ListIcon.svelte';
   import EditIcon from '../../lib/icons/EditIcon.svelte';
   import Checkbox from '../../lib/Checkbox.svelte';
+  import CategoryToggle from '../../lib/CategoryToggle.svelte';
+  import { shoppingEntries } from '../../lib/shopping';
   import ItemRow from '../../lib/ItemRow.svelte';
   import { translations, type Language } from '../../lib/i18n';
   import { Sync, openPersistence } from '../../lib/sync';
   import {
     newID,
+    categoryDefinitions,
+    type Category,
     normalize,
     type Item,
     type SharedState,
@@ -41,6 +45,8 @@
   let notification = '';
   let duplicate: Item | undefined;
   let newName = '';
+  let newCategory: Category = '';
+  let categoryExpanded: Record<string, boolean> = {};
   let newCounter = false;
   let newTags = false;
   let newTagLabels = '';
@@ -98,6 +104,7 @@
   $: visible = shopping
     ? ordered.filter((i) => i.needed && !i.purchased)
     : ordered;
+  $: entries = shoppingEntries(ordered);
   $: cart = ordered.filter((i) => i.needed && i.purchased);
   $: needed = view?.items.filter((i) => i.needed).length || 0;
   $: canEdit = connected && status !== 'attention' && !busy;
@@ -119,6 +126,7 @@
           counter: t.fieldCounter,
           showTags: t.fieldShowTags,
           tags: t.tagLabels,
+          category: t.fieldCategory,
         } as Record<string, string>
       )[conflict.op.field] || conflict.op.field
     : t.fieldOrder;
@@ -128,7 +136,14 @@
   function prefs() {
     localStorage.setItem(
       'shopping-preferences',
-      JSON.stringify({ lang, tab, shopping, layoutId, scrolls }),
+      JSON.stringify({
+        lang,
+        tab,
+        shopping,
+        layoutId,
+        scrolls,
+        categoryExpanded,
+      }),
     );
   }
   function scrollSave() {
@@ -174,6 +189,12 @@
       shopping = !!p.shopping;
       layoutId = p.layoutId || '';
       scrolls = p.scrolls || {};
+      categoryExpanded = Object.fromEntries(
+        categoryDefinitions.map(({ id }) => [
+          id,
+          p.categoryExpanded?.[id] === true,
+        ]),
+      );
     } catch {
       /* start with defaults */
     }
@@ -286,6 +307,7 @@
           itemId: newID(),
           name,
           reusable,
+          ...(newCategory ? { category: newCategory } : {}),
           counter: newCounter,
           showTags: newTags,
           tags: [...new Set(labels)].sort(),
@@ -294,6 +316,7 @@
       )
     ) {
       newName = '';
+      newCategory = '';
       newCounter = false;
       newTags = false;
       newTagLabels = '';
@@ -306,6 +329,10 @@
     const i = duplicate;
     duplicate = undefined;
     newName = '';
+    newCategory = '';
+    newCounter = false;
+    newTags = false;
+    newTagLabels = '';
     addOpen = false;
     await change(
       i,
@@ -314,13 +341,15 @@
     );
   }
   async function edit(item: Item, field: string, value: unknown) {
-    if (item[field as keyof Item] === value) return;
+    const base =
+      field === 'category' ? item.category || '' : item[field as keyof Item];
+    if (base === value) return;
     await write(
       {
         kind: 'item_edit',
         itemId: item.id,
         field,
-        base: item[field as keyof Item],
+        base,
         value,
       },
       true,
@@ -557,17 +586,75 @@
           >
         </div>
         {#if visible.length}<ul class="items">
-            {#each visible as item (item.id)}<ItemRow
-                {item}
-                {shopping}
-                {lang}
-                {arrange}
-                canUp={visible[0].id !== item.id}
-                canDown={visible[visible.length - 1].id !== item.id}
-                change={(field, value) => change(item, field, value)}
-                move={(delta) => move(item, delta)}
-                drop={reorder}
-              />{/each}
+            {#if shopping && !arrange}
+              {#each entries as entry (entry.kind === 'item' ? entry.item.id : `category-${entry.category}`)}
+                {#if entry.kind === 'category'}
+                  <li class="category-group" data-category={entry.category}>
+                    <button
+                      type="button"
+                      class="category-header"
+                      aria-expanded={categoryExpanded[entry.category] === true}
+                      aria-controls={`category-${entry.category}`}
+                      on:click={() => {
+                        categoryExpanded = {
+                          ...categoryExpanded,
+                          [entry.category]: !categoryExpanded[entry.category],
+                        };
+                        prefs();
+                      }}
+                      ><span aria-hidden="true"
+                        >{categoryExpanded[entry.category] ? '▾' : '▸'}</span
+                      >
+                      {t[
+                        categoryDefinitions.find(
+                          (c) => c.id === entry.category,
+                        )!.labelKey
+                      ]} · {entry.items.length}
+                      {t.remaining}
+                    </button>
+                    <ul
+                      class="items category-items"
+                      id={`category-${entry.category}`}
+                      hidden={!categoryExpanded[entry.category]}
+                    >
+                      {#each entry.items as item (item.id)}
+                        <ItemRow
+                          {item}
+                          {shopping}
+                          {lang}
+                          arrange={false}
+                          change={(field, value) => change(item, field, value)}
+                          move={() => {}}
+                          drop={reorder}
+                        />
+                      {/each}
+                    </ul>
+                  </li>
+                {:else}
+                  <ItemRow
+                    item={entry.item}
+                    {shopping}
+                    {lang}
+                    arrange={false}
+                    change={(field, value) => change(entry.item, field, value)}
+                    move={() => {}}
+                    drop={reorder}
+                  />
+                {/if}
+              {/each}
+            {:else}
+              {#each visible as item (item.id)}<ItemRow
+                  {item}
+                  {shopping}
+                  {lang}
+                  {arrange}
+                  canUp={visible[0].id !== item.id}
+                  canDown={visible[visible.length - 1].id !== item.id}
+                  change={(field, value) => change(item, field, value)}
+                  move={(delta) => move(item, delta)}
+                  drop={reorder}
+                />{/each}
+            {/if}
           </ul>{:else}<div class="empty">
             <span class="empty-icon" aria-hidden="true"
               >{shopping ? '✓' : '＋'}</span
@@ -616,15 +703,23 @@
                 required
                 autocomplete="off"
               /></label
-            ><Checkbox
-              checked={newCounter}
-              label={t.counter}
-              onChange={(v) => (newCounter = v)}
-            /><Checkbox
-              checked={newTags}
-              label={t.personTags}
-              onChange={(v) => (newTags = v)}
-            />{#if newTags}<label
+            >
+            <div class="item-options">
+              <Checkbox
+                checked={newCounter}
+                label={t.counter}
+                onChange={(v) => (newCounter = v)}
+              /><Checkbox
+                checked={newTags}
+                label={t.personTags}
+                onChange={(v) => (newTags = v)}
+              /><CategoryToggle
+                value={newCategory}
+                {lang}
+                onChange={(v) => (newCategory = v)}
+              />
+            </div>
+            {#if newTags}<label
                 >{t.tagLabels}<input
                   aria-label={t.tagLabels}
                   bind:value={newTagLabels}
@@ -657,17 +752,26 @@
               required
               autocomplete="off"
             /></label
-          ><Checkbox
-            checked={newCounter}
-            disabled={!canEdit}
-            label={t.counter}
-            onChange={(v) => (newCounter = v)}
-          /><Checkbox
-            checked={newTags}
-            disabled={!canEdit}
-            label={t.personTags}
-            onChange={(v) => (newTags = v)}
-          />{#if newTags}<label
+          >
+          <div class="item-options">
+            <Checkbox
+              checked={newCounter}
+              disabled={!canEdit}
+              label={t.counter}
+              onChange={(v) => (newCounter = v)}
+            /><Checkbox
+              checked={newTags}
+              disabled={!canEdit}
+              label={t.personTags}
+              onChange={(v) => (newTags = v)}
+            /><CategoryToggle
+              value={newCategory}
+              {lang}
+              disabled={!canEdit}
+              onChange={(v) => (newCategory = v)}
+            />
+          </div>
+          {#if newTags}<label
               >{t.tagLabels}<input
                 aria-label={t.tagLabels}
                 bind:value={newTagLabels}
@@ -707,6 +811,12 @@
                 disabled={!canEdit}
                 label={`${t.personTags} ${t.for} ${item.name}`}
                 onChange={(v) => edit(item, 'showTags', v)}
+              /><CategoryToggle
+                value={item.category || ''}
+                {lang}
+                itemName={item.name}
+                disabled={!canEdit}
+                onChange={(v) => edit(item, 'category', v)}
               />{#if item.showTags}<label
                   >{t.tagLabels}<input
                     aria-label={`${t.tagLabels} ${t.for} ${item.name}`}
@@ -831,6 +941,38 @@
 </div>
 
 <style>
+  .item-options {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+  }
+  .category-group {
+    list-style: none;
+    border-bottom: 1px solid var(--ts-border, #dedbe4);
+  }
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px;
+    border: 0;
+    background: var(--ts-surface-subtle, #f9f9fb);
+    color: var(--ts-primary, #6750a4);
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+  }
+  .category-items {
+    padding-left: 12px;
+  }
+  .category-items[hidden] {
+    display: none;
+  }
+
   /* UI 0.1.0 has a fixed decorative letter mark and no brand-image prop. */
   .shopping-shell :global(.ts-brand-mark) {
     border: 0;

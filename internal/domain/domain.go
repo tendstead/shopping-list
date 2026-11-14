@@ -15,6 +15,7 @@ import (
 type Item struct {
 	ID           string   `json:"id"`
 	Name         string   `json:"name"`
+	Category     string   `json:"category,omitempty"`
 	Reusable     bool     `json:"reusable"`
 	Counter      bool     `json:"counter"`
 	ShowTags     bool     `json:"showTags"`
@@ -55,6 +56,7 @@ type Operation struct {
 	ItemID   string          `json:"itemId,omitempty"`
 	LayoutID string          `json:"layoutId,omitempty"`
 	Name     string          `json:"name,omitempty"`
+	Category string          `json:"category,omitempty"`
 	Reusable bool            `json:"reusable,omitempty"`
 	Counter  bool            `json:"counter,omitempty"`
 	ShowTags bool            `json:"showTags,omitempty"`
@@ -151,6 +153,9 @@ func (s *State) apply(op Operation) *Problem {
 	}
 	switch op.Kind {
 	case "item_add":
+		if op.Category != "" && op.Category != "spices" {
+			return problem("invalid", "Unknown category")
+		}
 		name := normalize(op.Name)
 		if name == "" || len(name) > 240 || !validID.MatchString(op.ItemID) {
 			return problem("invalid", "Supply an item id and name")
@@ -167,7 +172,7 @@ func (s *State) apply(op Operation) *Problem {
 		if p != nil {
 			return p
 		}
-		i := Item{ID: op.ItemID, Name: name, Reusable: op.Reusable, Counter: op.Counter, ShowTags: op.ShowTags, Tags: ts, Needed: !op.Reusable, SelectedTags: []string{}}
+		i := Item{ID: op.ItemID, Name: name, Category: op.Category, Reusable: op.Reusable, Counter: op.Counter, ShowTags: op.ShowTags, Tags: ts, Needed: !op.Reusable, SelectedTags: []string{}}
 		if i.Counter && i.Needed {
 			i.Count = 1
 		}
@@ -198,6 +203,15 @@ func (s *State) apply(op Operation) *Problem {
 		}
 		if op.Kind == "item_edit" {
 			switch op.Field {
+			case "category":
+				var v string
+				if json.Unmarshal(op.Value, &v) != nil || (v != "" && v != "spices") {
+					return problem("invalid", "Unknown category")
+				}
+				if p := compare(i.Category, op.Base, op.Value); p != nil {
+					return p
+				}
+				i.Category = v
 			case "name":
 				var v string
 				if json.Unmarshal(op.Value, &v) != nil {

@@ -1,6 +1,11 @@
+export const categoryDefinitions = [
+  { id: 'spices', labelKey: 'spices' },
+] as const;
+export type Category = '' | (typeof categoryDefinitions)[number]['id'];
 export type Item = {
   id: string;
   name: string;
+  category?: Category;
   reusable: boolean;
   counter: boolean;
   showTags: boolean;
@@ -36,6 +41,7 @@ export type Operation = {
   itemId?: string;
   layoutId?: string;
   name?: string;
+  category?: Category;
   reusable?: boolean;
   counter?: boolean;
   showTags?: boolean;
@@ -93,6 +99,7 @@ export function project(
       const item: Item = {
         id: op.itemId!,
         name: normalize(op.name || ''),
+        ...(op.category ? { category: op.category } : {}),
         reusable: !!op.reusable,
         counter: !!op.counter,
         showTags: !!op.showTags,

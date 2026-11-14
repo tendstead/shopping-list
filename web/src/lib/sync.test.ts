@@ -435,3 +435,120 @@ test('using a duplicate follows existing-item edits already queued behind it', a
   expect(s.status).toBe('synced');
   expect(s.view?.items[0].count).toBe(2);
 });
+
+test('offline spice additions and purchases survive reload and drain unchanged', async () => {
+  const db = await openPersistence(crypto.randomUUID());
+  await db.put('data', { state: initial, pending: [] }, 'session');
+  const offline = new Sync(db, async () => {
+    throw new TypeError('offline');
+  });
+  await offline.init();
+  await offline.enqueue({
+    id: 'add-spice',
+    tripId: initial.tripId,
+    kind: 'item_add',
+    itemId: 'cumin',
+    name: 'Cumin',
+    category: 'spices',
+  });
+  await offline.enqueue({
+    id: 'buy-spice',
+    tripId: initial.tripId,
+    kind: 'trip_set',
+    itemId: 'cumin',
+    field: 'purchased',
+    base: false,
+    value: true,
+  });
+  const queued = JSON.stringify(offline.pending.map((p) => p.op));
+  let server = structuredClone(initial);
+  const reloaded = new Sync(db, async (_url, options) => {
+    if (!options?.body) return response(server);
+    const op = JSON.parse(String(options.body)) as Operation;
+    server = project(server, [{ op }]);
+    server.revision++;
+    return response({ state: server });
+  });
+  await reloaded.init();
+  await reloaded.reconcile();
+  expect(reloaded.view?.items.find((i) => i.id === 'cumin')).toMatchObject({
+    category: 'spices',
+    purchased: true,
+  });
+  expect(server.items.filter((i) => i.id === 'cumin')).toHaveLength(1);
+  expect(JSON.parse(queued).map((op: Operation) => op.id)).toEqual([
+    'add-spice',
+    'buy-spice',
+  ]);
+});
+
+test('keeping a category edit against an old snapshot sends an empty base', async () => {
+  const db = await openPersistence(crypto.randomUUID());
+  const entry = {
+    op: {
+      id: 'category-conflict',
+      tripId: initial.tripId,
+      kind: 'item_edit',
+      itemId: 'milk',
+      field: 'category',
+      base: 'spices',
+      value: '',
+    },
+    problem: { code: 'conflict', message: 'Choose' },
+  };
+  await db.put('data', { state: initial, pending: [entry] }, 'session');
+  const sync = new Sync(db, async () => {
+    throw new TypeError('offline');
+  });
+  await sync.init();
+  await sync.resolve('mine', 'category-conflict');
+  expect(sync.pending[0].op.base).toBe('');
+});
+
+test('restoring a removed spice retains its category and purchase intent', async () => {
+  const db = await openPersistence(crypto.randomUUID());
+  const removed = {
+    ...initial.items[0],
+    id: 'removed-spice',
+    name: 'Cumin',
+    category: 'spices' as const,
+    needed: true,
+    count: 2,
+  };
+  await db.put(
+    'data',
+    {
+      state: initial,
+      pending: [
+        {
+          op: {
+            id: 'lost-buy',
+            tripId: initial.tripId,
+            kind: 'trip_set',
+            itemId: removed.id,
+            field: 'purchased',
+            base: false,
+            value: true,
+          },
+          item: removed,
+          problem: { code: 'missing', message: 'Removed' },
+        },
+      ],
+    },
+    'session',
+  );
+  const sync = new Sync(db, async () => {
+    throw new TypeError('offline');
+  });
+  await sync.init();
+  await sync.restoreRemoved();
+  expect(sync.pending[0].op).toMatchObject({
+    kind: 'item_add',
+    category: 'spices',
+  });
+  expect(sync.view?.items.find((i) => i.name === 'Cumin')).toMatchObject({
+    category: 'spices',
+    count: 2,
+    purchased: true,
+  });
+});
