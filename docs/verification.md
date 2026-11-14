@@ -153,3 +153,29 @@ so test success does not depend on additional swap memory.
 - The approved plan excludes neighboring-project/Automatix integration. No such
   integration was performed. No Git initialization, commit, push or publication
   occurred. No infrastructure accounts or host certificate trust were changed.
+
+## Collapsible shopping categories — 2026-11-14
+
+Implemented generic category grouping with Spices as the initial category. The
+mobile controls support explicit assignment, per-device collapse preferences,
+fixed group placement during purchases, and individual spice ordering in Arrange.
+
+`make check` passed on `feat/collapsible-shopping-groups`: Go race tests,
+PostgreSQL/API service tests, 20 Vitest tests, 42 mobile Chromium/WebKit acceptance
+checks, formatting/lint/types/vet, vulnerability audits, production image build,
+and workflow validation. Local run log: `/tmp/shopping-check-complete.log`.
+
+Category regressions cover old-format request hashes and omitted category fields,
+field-level conflicts, exact retries, durable offline additions/purchases,
+restoring removed items, unfinished-trip carryover, and unchanged history.
+Browser scenarios cover explicit assignment and clearing across contexts,
+duplicate selection, compact add-form reset, stable section placement, remaining
+counts, cart return, keyboard expansion, reload, independent device preferences,
+layout switching, Arrange ordering, German labels, and HTTPS outage/reload recovery.
+Purchase tests use clicks followed by group/cart assertions because moving a row
+into the collapsed cart replaces its checkbox instance.
+
+Mobile screenshots are generated under `web/test-results/spices-*.png` for both
+engines (collapsed, expanded, and cart states). Two actual phones and native touch
+gestures remain deployment checks; browser contexts are the evidence here.
+No deployment, push, or release was performed.

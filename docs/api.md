@@ -55,3 +55,13 @@ Migration files are embedded and checksum checked under a startup advisory lock.
 Never edit a migration after it is deployed or merged to the default branch; add
 a new numbered SQL file. The database schema named by DB_SEARCH_PATH must exist.
 There are no mutation endpoints for completed trip history.
+
+Items and `item_add` operations accept an optional `category` string. Missing or
+empty means unassigned; `spices` is currently the only assigned category ID.
+`item_edit` accepts `field: "category"`, with string `base` and `value` (use `""`
+for an unassigned base, including older cached items that omit the field).
+Categories merge independently of purchase/count/tag changes and use the same
+revision, conflict, and operation retry rules as other item fields. Empty
+categories remain omitted from serialized items and add operations for compatibility
+with older queued operations. Category assignment is shared across layouts;
+group expansion is a device preference and does not write to the API.

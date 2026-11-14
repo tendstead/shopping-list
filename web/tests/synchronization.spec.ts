@@ -59,7 +59,20 @@ test('secure shell reopens offline and retains pending changes through reload', 
   page,
 }) => {
   const name = unique('Offline');
-  await seed(page, name);
+  const spiceID = await seed(page, name);
+  const current = await state(page);
+  const assigned = await page.request.patch(`/api/items/${spiceID}`, {
+    data: {
+      id: crypto.randomUUID(),
+      tripId: current.tripId,
+      kind: 'item_edit',
+      itemId: spiceID,
+      field: 'category',
+      base: '',
+      value: 'spices',
+    },
+  });
+  expect(assigned.ok()).toBe(true);
   await page.goto('/');
   await synced(page);
   expect(await page.evaluate(() => isSecureContext)).toBe(true);
@@ -80,16 +93,27 @@ test('secure shell reopens offline and retains pending changes through reload', 
     await expect(page.getByTestId('sync-status')).toContainText('pending', {
       timeout: 12000,
     });
+    await page
+      .getByRole('button', { name: 'Go shopping', exact: true })
+      .click();
+    await page.locator('[data-category="spices"] .category-header').click();
+    await page
+      .getByRole('checkbox', { name: `In cart: ${name}`, exact: true })
+      .click();
     await page.reload({ timeout: 15000 });
+    await page.getByText(/In cart ·/).click();
     await expect(
       page.getByLabel(`Count for ${name}`, { exact: true }),
     ).toHaveText('1');
-    await expect(page.getByTestId('sync-status')).toContainText('1 pending');
+    await expect(page.getByTestId('sync-status')).toContainText('2 pending');
   } finally {
     await origin('online');
   }
 
   await synced(page);
+  expect((await state(page)).items.find((i) => i.id === spiceID)).toMatchObject(
+    { category: 'spices', purchased: true },
+  );
 });
 test.describe('network response faults', () => {
   test.use({ serviceWorkers: 'block' });

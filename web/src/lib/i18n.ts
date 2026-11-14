@@ -26,6 +26,8 @@ const en = {
   add: 'Add item',
   name: 'Name',
   counter: 'Show counter',
+  quantityOption: 'Quantity',
+  peopleOption: 'People',
   personTags: 'Show person tags',
   tagLabels: 'Tag labels',
   tagHint:
@@ -89,6 +91,12 @@ const en = {
   fieldCounter: 'Show counter',
   fieldShowTags: 'Show person tags',
   fieldOrder: 'Layout order',
+  spices: 'Spices',
+  categoryInfo: 'About',
+  spicesHelp:
+    'Groups this item under Spices while shopping. Expand the group to check off each item separately.',
+  remaining: 'remaining',
+  fieldCategory: 'Category',
   language: 'Language',
   loading: 'Loading your list…',
   noSnapshot: 'Connect once to load your household’s list.',
@@ -126,6 +134,8 @@ const de: typeof en = {
   add: 'Artikel hinzufügen',
   name: 'Name',
   counter: 'Zähler anzeigen',
+  quantityOption: 'Menge',
+  peopleOption: 'Personen',
   personTags: 'Personenkürzel anzeigen',
   tagLabels: 'Personenkürzel',
   tagHint:
@@ -194,6 +204,12 @@ const de: typeof en = {
   fieldCounter: 'Zähler anzeigen',
   fieldShowTags: 'Personenkürzel anzeigen',
   fieldOrder: 'Anordnung',
+  spices: 'Gewürze',
+  categoryInfo: 'Info zu',
+  spicesHelp:
+    'Fasst diesen Artikel beim Einkaufen unter Gewürze zusammen. Öffne die Gruppe, um die Artikel einzeln abzuhaken.',
+  remaining: 'offen',
+  fieldCategory: 'Kategorie',
   language: 'Sprache',
   loading: 'Deine Liste wird geladen…',
   noSnapshot: 'Verbinde dich einmal, um die Liste deines Haushalts zu laden.',

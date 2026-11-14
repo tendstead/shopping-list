@@ -229,7 +229,10 @@ export class Sync {
             throw new Error(
               'This item was removed. Add it again as a one-time item',
             );
-          op.base = structuredClone(item[op.field as keyof Item]);
+          op.base =
+            op.field === 'category'
+              ? item.category || ''
+              : structuredClone(item[op.field as keyof Item]);
         }
         if (op.kind === 'item_delete') op.base = item;
         if (op.kind === 'layout_order') {
@@ -298,6 +301,7 @@ export class Sync {
           kind: 'item_add',
           itemId: id,
           name: item.name,
+          ...(item.category ? { category: item.category } : {}),
           reusable: false,
           counter: item.counter,
           showTags: item.showTags,
