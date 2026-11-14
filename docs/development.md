@@ -9,13 +9,31 @@ make e2e           # mobile Chromium + WebKit through an isolated HTTPS proxy
 make observe       # app memory/CPU observations with idle SSE and editing
 ```
 
-Other targets: `fmt-check`, `lint`, `vet`, `vuln`, `test`, `release-test`, `build`,
+Other targets: `dependency-check`, `fmt-check`, `lint`, `vet`, `vuln`, `test`, `release-test`, `infra-test`, `build`,
 `up`, `down`, `logs`, and `workflow-lint`. Test Compose projects use unique names,
 keep their database in tmpfs, and clean up their own containers and volumes.
-Deployment's `postgres-data` volume is not used by tests. Tooling cache volumes are
-separate. A draft `.pre-commit-config.yaml` is provided for later opt-in use.
+Deployment's `postgres-data` volume is not used by tests. Disposable Go module,
+compiler, lint, and npm download caches live under `.implementation/cache/` and
+are shared between tool and test containers. Test cleanup preserves those caches;
+database contents and browser node_modules remain isolated. A draft
+`.pre-commit-config.yaml` is provided for later opt-in use.
 
-CI runs `make check`, including `govulncheck` and `npm audit` through `make vuln`.
+CI runs the same targets as `make check` in separately timed steps within the
+required `checks` job, including `govulncheck` and `npm audit` through `make vuln`.
+Actions restores content/compiler caches using OS, architecture, lockfiles and
+tool image definitions. Cache misses still run the full suite; npm installs use
+the lockfile and audits always query current advisories. Superseded runs for the
+same PR are canceled. Browser tests stay sequential because the offline scenarios
+disconnect the shared test origin.
+
+`dependency-check` rejects a Playwright package/lockfile/browser-image mismatch
+before browser setup. Update the exact npm version and `compose.test.yaml` image
+together. CI also rejects dependency files changed by `make deps`.
+
+TypeScript stays on 6.0.3 because the current SvelteKit, svelte-check and
+typescript-eslint peer requirements exclude TypeScript 7. The scoped minimatch
+override supplies its patched version to typescript-eslint until its upstream
+range is updated; remove that override once upstream includes the fix.
 The optional pre-commit hooks run formatting, lint, and type checks; install them
 with `pre-commit install`. They do not run vulnerability scans.
 

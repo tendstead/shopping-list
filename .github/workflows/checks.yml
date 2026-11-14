@@ -5,14 +5,46 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   checks:
     if: github.event_name != 'push' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Restore dependency and compiler caches
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .implementation/cache
+          key: deps-${{ runner.os }}-${{ runner.arch }}-v1-${{ hashFiles('go.sum', 'web/package-lock.json', 'compose.tools.yaml', 'compose.test.yaml') }}
+          restore-keys: deps-${{ runner.os }}-${{ runner.arch }}-v1-
       - name: Install container build dependencies
         run: make deps
-      - name: Format, lint, audit, test, and build without publishing
-        run: make check
+      - name: Dependency alignment and unchanged lockfiles
+        run: |
+          make dependency-check
+          git diff --exit-code -- go.mod go.sum web/package.json web/package-lock.json
+      - name: Formatting
+        run: make fmt-check
+      - name: Lint and frontend types
+        run: make lint
+      - name: Go vet
+        run: make vet
+      - name: Vulnerability audits
+        run: make vuln
+      - name: Unit, release and test-infrastructure tests
+        run: make test
+      - name: PostgreSQL and HTTP integration tests
+        run: make service-test
+      - name: Chromium and WebKit acceptance tests
+        run: make e2e
+      - name: Production image build
+        run: make build
+      - name: Workflow validation
+        run: make workflow-lint
+      - name: Make container cache files readable for archiving
+        if: always()
+        run: sudo chmod -R a+rX .implementation/cache

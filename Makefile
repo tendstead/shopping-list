@@ -1,8 +1,10 @@
 TOOLS = docker compose -p shopping-tools -f compose.tools.yaml
-.PHONY: deps fmt fmt-check lint vet vuln test service-test e2e build up down logs check release-test
+.PHONY: deps fmt fmt-check lint vet vuln test service-test e2e build up down logs check release-test dependency-check infra-test
 deps:
 	$(TOOLS) run --rm go go mod tidy
-	$(TOOLS) run --rm frontend npm ci
+	$(TOOLS) run --rm frontend npm ci --prefer-offline --no-audit --no-fund
+dependency-check:
+	$(TOOLS) run --rm frontend node /app/scripts/check-dependencies.mjs
 fmt:
 	$(TOOLS) run --rm go gofmt -w cmd internal
 	$(TOOLS) run --rm frontend npm run format
@@ -21,6 +23,7 @@ test:
 	$(TOOLS) run --rm go go test -race -count=1 ./...
 	$(TOOLS) run --rm frontend npm test
 	$(MAKE) release-test
+	$(MAKE) infra-test
 service-test:
 	sh scripts/test-containers.sh service
 e2e:
@@ -33,9 +36,11 @@ down:
 	docker compose down
 logs:
 	docker compose logs -f --tail=100
-check: fmt-check lint vet vuln test service-test e2e build workflow-lint
+check: dependency-check fmt-check lint vet vuln test service-test e2e build workflow-lint
 release-test:
 	$(TOOLS) run --rm frontend node --test /app/scripts/release.test.mjs
+infra-test:
+	$(TOOLS) run --rm frontend node --test /app/scripts/network-control.test.mjs /app/scripts/check-dependencies.test.mjs
 .PHONY: observe workflow-lint
 observe:
 	sh scripts/observe.sh

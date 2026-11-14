@@ -17,7 +17,7 @@ services:
     memswap_limit: 2g
     image: golang:1.27.4
     working_dir: /app
-    volumes: [".:/app:ro", "go-mod:/go/pkg/mod", "go-build:/root/.cache/go-build"]
+    volumes: [".:/app:ro", "./.implementation/cache/go-mod:/go/pkg/mod", "./.implementation/cache/go-build:/root/.cache/go-build"]
     environment: {DB_HOST: postgres, DB_PORT: "5432", DB_USERNAME: shopping, DB_PASSWORD: test-only, DB_NAME: shopping, DB_SSL_MODE: disable}
     depends_on: {postgres: {condition: service_healthy}}
     command: [go, test, -race, -count=1, ./internal/store, ./internal/httpapi]
@@ -57,12 +57,10 @@ services:
     memswap_limit: 4g
     image: mcr.microsoft.com/playwright:v1.65.1-noble
     working_dir: /app/web
-    volumes: [".:/app", "e2e-node:/app/web/node_modules", "tls-data:/certs:ro"]
+    volumes: [".:/app", "e2e-node:/app/web/node_modules", "tls-data:/certs:ro", "./.implementation/cache/npm:/root/.npm/_cacache"]
     environment: {BASE_URL: "https://shopping.test", CI: "true"}
     depends_on: {tls: {condition: service_healthy}}
-    command: [sh, -c, "cp /certs/caddy/pki/authorities/local/root.crt /usr/local/share/ca-certificates/shopping-test.crt && update-ca-certificates && npm ci && npm run test:e2e"]
+    command: [sh, -c, "cp /certs/caddy/pki/authorities/local/root.crt /usr/local/share/ca-certificates/shopping-test.crt && update-ca-certificates && npm ci --prefer-offline --no-audit --no-fund && npm run test:e2e"]
 volumes:
-  go-mod:
-  go-build:
   e2e-node:
   tls-data:

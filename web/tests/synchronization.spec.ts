@@ -1,11 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
-import { writeFile, readFile } from 'node:fs/promises';
+import { writeFile, readFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
 async function origin(phase: 'offline' | 'online') {
   const dir = process.env.ORIGIN_CONTROL_DIR;
   if (!dir)
     throw new Error('Run through make e2e for real origin disconnection');
-  await writeFile(join(dir, 'request'), phase);
+  await writeFile(join(dir, 'request.tmp'), phase);
+  await rename(join(dir, 'request.tmp'), join(dir, 'request'));
   await expect
     .poll(
       async () =>
