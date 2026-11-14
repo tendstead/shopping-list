@@ -14,29 +14,29 @@
   },
   "dependencies": {
     "@melt-ui/svelte": "^0.86.6",
-    "@tendstead/ui": "0.1.1",
+    "@tendstead/ui": "0.1.2",
     "idb": "^8.0.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.15.0",
-    "eslint-plugin-svelte": "^3.24.1",
-    "typescript-eslint": "^8.72.2",
-    "globals": "^17.14.0",
-    "prettier": "^3.10.1",
-    "prettier-plugin-svelte": "^4.1.1",
+    "@opentelemetry/api": "^1.10.0",
+    "@playwright/test": "1.65.1",
     "@sveltejs/adapter-static": "^4.0.1",
     "@sveltejs/kit": "^3.2.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.15.0",
+    "eslint-plugin-svelte": "^3.24.1",
+    "fake-indexeddb": "^6.2.8",
+    "globals": "^17.14.0",
+    "prettier": "^3.10.1",
+    "prettier-plugin-svelte": "^4.1.1",
     "svelte": "^5.57.3",
     "svelte-check": "^4.7.8",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0",
-    "@playwright/test": "1.65.1",
-    "fake-indexeddb": "^6.2.8",
-    "@types/node": "^26.6.6",
-    "@opentelemetry/api": "^1.10.0"
+    "vitest": "^5.1.0"
   },
   "overrides": {
     "@typescript-eslint/typescript-estree": {
