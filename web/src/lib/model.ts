@@ -1,5 +1,5 @@
 export const categoryDefinitions = [
-  { id: 'spices', labelKey: 'spices' },
+  { id: 'spices', labelKey: 'spices', helpKey: 'spicesHelp' },
 ] as const;
 export type Category = '' | (typeof categoryDefinitions)[number]['id'];
 export type Item = {

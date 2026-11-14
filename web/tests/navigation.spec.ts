@@ -43,7 +43,7 @@ test('shared shell preserves tab navigation, history, language and three mobile 
     page.getByRole('button', { name: 'Add item', exact: true }),
   ).toHaveCSS('background-color', 'rgb(103, 80, 164)');
   const counter = page.getByRole('checkbox', {
-    name: 'Show counter',
+    name: 'Quantity: Show counter',
     exact: true,
   });
   await counter.check();

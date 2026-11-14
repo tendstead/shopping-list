@@ -706,12 +706,16 @@
             >
             <div class="item-options">
               <Checkbox
+                boxed
+                text={t.quantityOption}
                 checked={newCounter}
-                label={t.counter}
+                label={`${t.quantityOption}: ${t.counter}`}
                 onChange={(v) => (newCounter = v)}
               /><Checkbox
+                boxed
+                text={t.peopleOption}
                 checked={newTags}
-                label={t.personTags}
+                label={`${t.peopleOption}: ${t.personTags}`}
                 onChange={(v) => (newTags = v)}
               /><CategoryToggle
                 value={newCategory}
@@ -755,14 +759,18 @@
           >
           <div class="item-options">
             <Checkbox
+              boxed
+              text={t.quantityOption}
               checked={newCounter}
               disabled={!canEdit}
-              label={t.counter}
+              label={`${t.quantityOption}: ${t.counter}`}
               onChange={(v) => (newCounter = v)}
             /><Checkbox
+              boxed
+              text={t.peopleOption}
               checked={newTags}
               disabled={!canEdit}
-              label={t.personTags}
+              label={`${t.peopleOption}: ${t.personTags}`}
               onChange={(v) => (newTags = v)}
             /><CategoryToggle
               value={newCategory}
@@ -801,23 +809,31 @@
                     if (e.key === 'Enter') e.currentTarget.blur();
                   }}
                 /></label
-              ><Checkbox
-                checked={item.counter}
-                disabled={!canEdit}
-                label={`${t.counter} ${t.for} ${item.name}`}
-                onChange={(v) => edit(item, 'counter', v)}
-              /><Checkbox
-                checked={item.showTags}
-                disabled={!canEdit}
-                label={`${t.personTags} ${t.for} ${item.name}`}
-                onChange={(v) => edit(item, 'showTags', v)}
-              /><CategoryToggle
-                value={item.category || ''}
-                {lang}
-                itemName={item.name}
-                disabled={!canEdit}
-                onChange={(v) => edit(item, 'category', v)}
-              />{#if item.showTags}<label
+              >
+              <div class="item-options">
+                <Checkbox
+                  boxed
+                  text={t.quantityOption}
+                  checked={item.counter}
+                  disabled={!canEdit}
+                  label={`${t.quantityOption}: ${t.counter} ${t.for} ${item.name}`}
+                  onChange={(v) => edit(item, 'counter', v)}
+                /><Checkbox
+                  boxed
+                  text={t.peopleOption}
+                  checked={item.showTags}
+                  disabled={!canEdit}
+                  label={`${t.peopleOption}: ${t.personTags} ${t.for} ${item.name}`}
+                  onChange={(v) => edit(item, 'showTags', v)}
+                /><CategoryToggle
+                  value={item.category || ''}
+                  {lang}
+                  itemName={item.name}
+                  disabled={!canEdit}
+                  onChange={(v) => edit(item, 'category', v)}
+                />
+              </div>
+              {#if item.showTags}<label
                   >{t.tagLabels}<input
                     aria-label={`${t.tagLabels} ${t.for} ${item.name}`}
                     value={item.tags.join(' ')}
@@ -942,10 +958,9 @@
 
 <style>
   .item-options {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px 16px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
   }
   .category-group {
     list-style: none;
@@ -1422,6 +1437,11 @@
   }
   .history-status.carried {
     color: #a17932;
+  }
+  @media (max-width: 360px) {
+    .item-options {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
   @media (min-width: 650px) {
     .hero {

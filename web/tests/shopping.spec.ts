@@ -10,11 +10,11 @@ async function add(page: Page, name: string, counter = false, tags = false) {
   await page.getByLabel('Name', { exact: true }).fill(name);
   if (counter)
     await page
-      .getByRole('checkbox', { name: 'Show counter', exact: true })
+      .getByRole('checkbox', { name: 'Quantity: Show counter', exact: true })
       .check();
   if (tags) {
     await page
-      .getByRole('checkbox', { name: 'Show person tags', exact: true })
+      .getByRole('checkbox', { name: 'People: Show person tags', exact: true })
       .check();
     await page.getByLabel('Tag labels', { exact: true }).fill('A B');
   }

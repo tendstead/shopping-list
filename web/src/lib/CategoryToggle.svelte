@@ -1,4 +1,6 @@
 <script lang="ts">
+  import InfoTooltip from './InfoTooltip.svelte';
+  import Checkbox from './Checkbox.svelte';
   import { categoryDefinitions, type Category } from './model';
   import { translations, type Language } from './i18n';
   export let value: Category = '';
@@ -10,36 +12,28 @@
 </script>
 
 {#each categoryDefinitions as category (category.id)}
-  <button
-    type="button"
-    class:selected={value === category.id}
-    aria-pressed={value === category.id}
-    aria-label={itemName
-      ? `${t[category.labelKey]} ${t.for} ${itemName}`
-      : t[category.labelKey]}
-    {disabled}
-    on:click={() => onChange(value === category.id ? '' : category.id)}
-    >{t[category.labelKey]}</button
-  >
+  <div class="category-option">
+    <Checkbox
+      boxed
+      checked={value === category.id}
+      label={itemName
+        ? `${t[category.labelKey]} ${t.for} ${itemName}`
+        : t[category.labelKey]}
+      text={t[category.labelKey]}
+      {disabled}
+      onChange={(checked) => onChange(checked ? category.id : '')}
+    />
+    <InfoTooltip
+      label={`${t.categoryInfo} ${t[category.labelKey]}${itemName ? ` ${t.for} ${itemName}` : ''}`}
+      text={t[category.helpKey]}
+    />
+  </div>
 {/each}
 
 <style>
-  button {
-    min-height: 44px;
-    padding: 8px 12px;
-    border: 1px solid var(--ts-border, #dedbe4);
-    border-radius: 10px;
-    background: var(--ts-surface, #fff);
-    color: var(--ts-primary, #6750a4);
-    font: inherit;
-    cursor: pointer;
-  }
-  button.selected {
-    background: var(--ts-primary, #6750a4);
-    color: var(--ts-on-primary, #fff);
-  }
-  button:disabled {
-    opacity: 0.5;
-    cursor: default;
+  .category-option {
+    position: relative;
+    display: flex;
+    min-width: 0;
   }
 </style>

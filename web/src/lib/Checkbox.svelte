@@ -5,6 +5,8 @@
   export let disabled = false;
   export let label: string;
   export let compact = false;
+  export let boxed = false;
+  export let text: string | undefined = undefined;
   export let onChange: (value: boolean) => void = () => {};
   const controlled = writable<boolean | 'indeterminate'>(checked);
   const {
@@ -25,10 +27,11 @@
   {...$root}
   use:root
   aria-label={label}
+  class:boxed
   class:compact
   class:active={checked}
   ><span class="box" aria-hidden="true">{checked ? '✓' : ''}</span
-  >{#if !compact}<span>{label}</span>{/if}</button
+  >{#if !compact}<span>{text ?? label}</span>{/if}</button
 >
 
 <style>
@@ -64,6 +67,31 @@
   .active .box {
     background: var(--ts-primary, #6750a4);
     border-color: var(--ts-primary, #6750a4);
+  }
+  .boxed {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 6px;
+    justify-content: center;
+    gap: 5px;
+    border: 1px solid var(--ts-border, #dedbe4);
+    border-radius: 10px;
+    background: var(--ts-surface, #fff);
+    color: var(--ts-muted, #625e6b);
+    font-size: 13px;
+    line-height: 18px;
+  }
+  .boxed .box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .boxed.active {
+    border-color: var(--ts-primary, #6750a4);
+    background: var(--ts-selection, #eee8f7);
+    color: var(--ts-primary, #6750a4);
   }
   button:disabled {
     opacity: 0.5;

@@ -36,13 +36,56 @@ test('spice assignment, collapsed shopping, fixed anchor and cart', async ({
   for (let i = 0; i < names.length; i++) {
     await page.getByRole('link', { name: 'Edit', exact: true }).click();
     await page.getByLabel('Name', { exact: true }).fill(names[i]);
+    if (i === 0) {
+      const options = page.locator('form .item-options').first();
+      await expect(options.getByRole('checkbox')).toHaveCount(3);
+      const info = options.getByRole('button', {
+        name: 'About Spices',
+        exact: true,
+      });
+      await expect(info).toBeVisible();
+      await info.click();
+      await expect(page.getByRole('tooltip')).toContainText(
+        'Groups this item under Spices while shopping.',
+      );
+      await expect(
+        options.getByRole('checkbox', { name: 'Spices', exact: true }),
+      ).not.toBeChecked();
+      await info.press('Escape');
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+      await info.press('Tab');
+      await info.focus();
+      await expect(page.getByRole('tooltip')).toBeVisible();
+      await info.press('Escape');
+      const boxes = await options
+        .getByRole('checkbox')
+        .evaluateAll((elements) =>
+          elements.map((e) => {
+            const r = e.getBoundingClientRect();
+            return { top: r.top, height: r.height, width: r.width };
+          }),
+        );
+      expect(
+        Math.max(...boxes.map((b) => b.top)) -
+          Math.min(...boxes.map((b) => b.top)),
+      ).toBeLessThan(1);
+      expect(boxes.every((b) => b.height >= 44)).toBe(true);
+      expect(
+        Math.max(...boxes.map((b) => b.width)) -
+          Math.min(...boxes.map((b) => b.width)),
+      ).toBeLessThan(1);
+      await page.screenshot({
+        path: `test-results/checkbox-options-${test.info().project.name}.png`,
+        fullPage: true,
+      });
+    }
     if ([1, 3, 4].includes(i))
-      await page.getByRole('button', { name: 'Spices', exact: true }).click();
+      await page.getByRole('checkbox', { name: 'Spices', exact: true }).click();
     await page.getByRole('button', { name: 'Add item', exact: true }).click();
     await synced(page);
     await expect(
-      page.getByRole('button', { name: 'Spices', exact: true }),
-    ).toHaveAttribute('aria-pressed', 'false');
+      page.getByRole('checkbox', { name: 'Spices', exact: true }),
+    ).toHaveAttribute('aria-checked', 'false');
   }
   await page.getByRole('link', { name: 'Shopping list', exact: true }).click();
   for (const name of names)
@@ -119,26 +162,26 @@ test('assignment changes sync between phones; Arrange retains spice order and ad
   await page.getByLabel('Name', { exact: true }).fill(name);
   await page.getByRole('button', { name: 'Add item', exact: true }).click();
   await synced(page);
-  const toggle = page.getByRole('button', {
+  const toggle = page.getByRole('checkbox', {
     name: `Spices for ${name}`,
     exact: true,
   });
   await toggle.click();
   await synced(page);
-  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
   try {
     const second = await context.newPage();
     await second.goto('/edit');
     await synced(second);
-    const other = second.getByRole('button', {
+    const other = second.getByRole('checkbox', {
       name: `Spices for ${name}`,
       exact: true,
     });
-    await expect(other).toHaveAttribute('aria-pressed', 'true');
+    await expect(other).toHaveAttribute('aria-checked', 'true');
     await toggle.click();
     await synced(page);
-    await expect(other).toHaveAttribute('aria-pressed', 'false');
+    await expect(other).toHaveAttribute('aria-checked', 'false');
     await toggle.click();
     await synced(page);
     await page
@@ -153,15 +196,15 @@ test('assignment changes sync between phones; Arrange retains spice order and ad
       .click();
     const one = `Paprika ${Date.now()}`;
     await page.getByLabel('Name', { exact: true }).fill(one);
-    await page.getByRole('button', { name: 'Spices', exact: true }).click();
+    await page.getByRole('checkbox', { name: 'Spices', exact: true }).click();
     await page.getByRole('button', { name: 'Add item', exact: true }).click();
     await synced(page);
     await page
       .getByRole('button', { name: 'Add one-time item', exact: true })
       .click();
     await expect(
-      page.getByRole('button', { name: 'Spices', exact: true }),
-    ).toHaveAttribute('aria-pressed', 'false');
+      page.getByRole('checkbox', { name: 'Spices', exact: true }),
+    ).toHaveAttribute('aria-checked', 'false');
     // A duplicate selection must retain the existing item's spice category.
     await page.getByLabel('Name', { exact: true }).fill(name);
     await page.getByRole('button', { name: 'Add item', exact: true }).click();
