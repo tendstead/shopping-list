@@ -10,7 +10,7 @@ compose up -d --build --wait app
 app=$(compose ps -q app)
 observe() { echo "$1"; docker stats --no-stream --format 'memory={{.MemUsage}} cpu={{.CPUPerc}}' "$app"; docker inspect --format 'oom={{.State.OOMKilled}} restarts={{.RestartCount}} memory_limit={{.HostConfig.Memory}} nanocpus={{.HostConfig.NanoCpus}}' "$app"; }
 observe 'No clients'
-docker run -d --cpus 0.5 --memory 128m --memory-swap 128m --name "$probe" --network "${project}_default" -v "$PWD/scripts/resource-probe.mjs:/probe.mjs:ro" node:24-alpine node /probe.mjs >/dev/null
+docker run -d --cpus 0.5 --memory 128m --memory-swap 128m --name "$probe" --network "${project}_default" -v "$PWD/scripts/resource-probe.mjs:/probe.mjs:ro" node:26.13.1-alpine node /probe.mjs >/dev/null
 sleep 4
 observe 'Two idle SSE clients'
 sleep 12

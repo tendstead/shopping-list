@@ -3,7 +3,7 @@ services:
     cpus: 1
     mem_limit: 512m
     memswap_limit: 512m
-    image: postgres:18-alpine
+    image: postgres:18.7-alpine
     environment: {POSTGRES_USER: shopping, POSTGRES_PASSWORD: test-only, POSTGRES_DB: shopping}
     tmpfs: [/var/lib/postgresql]
     healthcheck:
@@ -39,7 +39,7 @@ services:
     cpus: 0.5
     mem_limit: 128m
     memswap_limit: 128m
-    image: caddy:2-alpine
+    image: caddy:2.11.9-alpine
     volumes: ["./tests/Caddyfile:/etc/caddy/Caddyfile:ro", "tls-data:/data"]
     tmpfs: [/config]
     networks:
@@ -55,7 +55,7 @@ services:
     cpus: 2
     mem_limit: 4g
     memswap_limit: 4g
-    image: mcr.microsoft.com/playwright:v1.58.2-noble
+    image: mcr.microsoft.com/playwright:v1.65.1-noble
     working_dir: /app/web
     volumes: [".:/app", "e2e-node:/app/web/node_modules", "tls-data:/certs:ro"]
     environment: {BASE_URL: "https://shopping.test", CI: "true"}

@@ -34,7 +34,7 @@ services:
     cpus: 1
     mem_limit: 512m
     memswap_limit: 512m
-    image: postgres:18-alpine
+    image: postgres:18.7-alpine
     environment:
       POSTGRES_USER: shopping
       POSTGRES_PASSWORD: ${DB_PASSWORD:-shopping-dev-only}

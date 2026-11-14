@@ -40,4 +40,4 @@ release-test:
 observe:
 	sh scripts/observe.sh
 workflow-lint:
-	docker run --rm --cpus 1 --memory 128m --memory-swap 128m -v "$(CURDIR):/repo:ro" -w /repo rhysd/actionlint:latest -no-color -ignore 'unexpected key "queue" for "concurrency" section' .github/workflows/checks.yml .github/workflows/release.yml
+	docker run --rm --cpus 1 --memory 128m --memory-swap 128m -v "$(CURDIR):/repo:ro" -w /repo rhysd/actionlint:1.7.12 -no-color -ignore 'unexpected key "queue" for "concurrency" section' .github/workflows/checks.yml .github/workflows/release.yml
