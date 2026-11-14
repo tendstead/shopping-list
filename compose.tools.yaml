@@ -5,23 +5,20 @@ services:
     memswap_limit: 2g
     image: golang:1.27.4
     working_dir: /app
-    volumes: [".:/app", "go-mod:/go/pkg/mod", "go-build:/root/.cache/go-build"]
+    volumes: [".:/app", "./.implementation/cache/go-mod:/go/pkg/mod", "./.implementation/cache/go-build:/root/.cache/go-build"]
   frontend:
     cpus: 2
     mem_limit: 1g
     memswap_limit: 1g
-    image: node:24-alpine
+    image: node:26.13.1-alpine
     working_dir: /app/web
-    volumes: [".:/app", "node-mod:/app/web/node_modules"]
+    volumes: [".:/app", "node-mod:/app/web/node_modules", "./.implementation/cache/npm:/root/.npm/_cacache"]
   lint:
     cpus: 2
     mem_limit: 2g
     memswap_limit: 2g
     image: golangci/golangci-lint:v2.15.0
     working_dir: /app
-    volumes: [".:/app", "go-mod:/go/pkg/mod", "go-build:/root/.cache/go-build", "lint-cache:/root/.cache/golangci-lint"]
+    volumes: [".:/app", "./.implementation/cache/go-mod:/go/pkg/mod", "./.implementation/cache/go-build:/root/.cache/go-build", "./.implementation/cache/lint:/root/.cache/golangci-lint"]
 volumes:
-  go-mod:
-  go-build:
   node-mod:
-  lint-cache:
