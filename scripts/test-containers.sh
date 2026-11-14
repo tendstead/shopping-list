@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
+mkdir -p .implementation/cache
 project="shopping-test-$(date +%s)-$$"
 watcher=''
 control="$PWD/.implementation/$project-network"

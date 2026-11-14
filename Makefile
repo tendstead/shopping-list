@@ -1,5 +1,5 @@
 TOOLS = docker compose -p shopping-tools -f compose.tools.yaml
-.PHONY: deps fmt fmt-check lint vet vuln test service-test e2e build up down logs check release-test dependency-check infra-test
+.PHONY: deps fmt fmt-check lint vet vuln test service-test e2e build up down logs check release-test dependency-check infra-test cache-dirs
 deps:
 	$(TOOLS) run --rm go go mod tidy
 	$(TOOLS) run --rm frontend npm ci --prefer-offline --no-audit --no-fund
@@ -46,3 +46,9 @@ observe:
 	sh scripts/observe.sh
 workflow-lint:
 	docker run --rm --cpus 1 --memory 128m --memory-swap 128m -v "$(CURDIR):/repo:ro" -w /repo rhysd/actionlint:1.7.12 -no-color -ignore 'unexpected key "queue" for "concurrency" section' .github/workflows/checks.yml .github/workflows/release.yml
+
+# Docker creates missing bind-mount parents as root. Keep the parent owned by
+# the caller so fresh checkouts can also create the host-side E2E control files.
+deps fmt fmt-check lint vet vuln test service-test e2e release-test infra-test dependency-check: | cache-dirs
+cache-dirs:
+	mkdir -p .implementation/cache
